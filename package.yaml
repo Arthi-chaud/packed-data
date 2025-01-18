@@ -1,0 +1,150 @@
+name:                packed
+version:             0.1.0.0
+github:              "Arthi-chaud/phd"
+license:             BSD-3-Clause
+author:              "Arthi-chaud"
+maintainer:          "aj530@kent.ac.uk"
+copyright:           "2024 Arthi-chaud"
+
+extra-source-files:
+- README.md
+
+description:         Please see the README on GitHub at <https://github.com/Arthi-chaud/phd/code#readme>
+
+dependencies:
+- base >= 4.7 && < 5
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+
+default-extensions:
+- DataKinds
+- TypeOperators
+- KindSignatures
+- GADTs
+- LambdaCase
+- TemplateHaskell
+- TemplateHaskellQuotes
+- TupleSections
+- QualifiedDo
+
+library:
+  source-dirs: src
+  dependencies:
+  - bytestring
+  - extra
+  - template-haskell
+  - bytestring-strict-builder
+  - deepseq
+  - mtl
+  exposed-modules:
+  - Data.Packed
+  - Data.Packed.Reader
+  - Data.Packed.Needs
+  - Data.Packed.Instances
+  - Data.Packed.TH
+  - Data.Packed.Skippable
+
+executables:
+  packed-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - packed 
+    - time
+    - deepseq
+    - mtl
+tests:
+  packed-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wno-unused-top-binds
+    - -Wno-orphans
+    - -Wno-redundant-constraints
+    dependencies:
+    - packed 
+    - bytestring-strict-builder
+    - hspec
+    - bytestring
+
+benchmarks:
+  packed-bench:
+    source-dirs:      benchmark
+    main:             Main.hs
+    include-dirs: 
+    - benchmark 
+    c-sources: benchmark/benchmark.c
+    cc-options: -O2
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-T
+    - -O2
+    - -Wno-unused-top-binds
+    - -Wno-orphans
+    - -Wno-redundant-constraints
+    dependencies:
+    - packed
+    - criterion
+    - bytestring
+    - deepseq
+    - optparse-applicative
+    - cassava
+    - vector
+    - split
+    - listsafe
+    - Chart
+    - filepath
+    - directory
+    - Chart-diagrams
+    - aeson
+    - mtl
+  bigjson-bench:
+    source-dirs:      benchmark/bigjson
+    main:             Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-T
+    - -O2
+    - -Wno-unused-top-binds
+    - -Wno-orphans
+    - -Wno-redundant-constraints
+    dependencies:
+    - packed
+    - criterion
+    - bytestring
+    - aeson
+    - directory
+    - optparse-applicative
+  ast-bench:
+    source-dirs:      benchmark/ast
+    main:             Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-T
+    - -O2
+    - -Wno-unused-top-binds
+    - -Wno-orphans
+    - -Wno-redundant-constraints
+    dependencies:
+    - packed
+    - criterion
+    - optparse-applicative

@@ -1,0 +1,28 @@
+# Took from here: https://github.com/commercialhaskell/stack/issues/5754#issuecomment-1696156869
+name: 'Cache (Packed Haskell)'
+description: 'Cache for Packed Haskell'
+runs:
+  using: "composite"
+  steps:
+    - name: Cache GHC installation
+      uses: actions/cache@v3
+      id: ghc
+      with:
+        path: ~/.stack/programs/*/ghc-*
+        key: stack-ghc-9.10.1
+    - name: Install GHC using Stack
+      shell: sh
+      if: steps.ghc.outputs.cache-hit != 'true'
+      run: stack setup 9.10.1 --install-ghc  
+    - name: Cache Haskell dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.stack/stack.sqlite3
+          ~/.stack/snapshots
+        key: stack-deps--${{ hashFiles('stack.yaml.lock') }}
+        restore-keys: |
+          stack-deps--
+    - name: Install Stack
+      shell: bash
+      run: curl -sSL https://get.haskellstack.org/ | sh -s - -f

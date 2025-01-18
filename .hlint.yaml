@@ -1,0 +1,8 @@
+# HLint configuration file
+# https://github.com/ndmitchell/hlint
+##########################
+
+- ignore: { name: "Avoid lambda", within: [Data.Packed.*, Data.Packed.TH.*] }
+- ignore: { name: "Unused LANGUAGE pragma", within: [Data.Packed.Reader]  }
+- ignore: { name: "Redundant bracket", within: [Data.Packed.TH.*] }
+- ignore: { name: "Use >=>", within: ["Data.Packed.*"] }

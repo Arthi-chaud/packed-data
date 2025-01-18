@@ -1,0 +1,115 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
+module Data.Packed.TH.Case (caseFName, genCase) where
+
+import Data.Packed.FieldSize
+import Data.Packed.Reader hiding (return)
+import Data.Packed.TH.Flag
+import Data.Packed.TH.Utils (Tag, getNameAndBangTypesFromCon, resolveAppliedType, sanitizeConName)
+import Data.Packed.Utils ((:++:))
+import Language.Haskell.TH
+
+caseFName :: Name -> Name
+caseFName tyName = mkName $ "case" ++ nameBase tyName
+
+-- | Generates a function to allow pattern matching a packed data type using the data constructors
+--
+--  __Example:__
+--
+-- For the 'Tree' data type, it generates the following function:
+--
+-- @
+-- caseTree ::
+--     ('Data.Packed.PackedReader' '[a] r b) ->
+--     ('Data.Packed.PackedReader' '[Tree a, Tree a] r b) ->
+--     'Data.Packed.PackedReader' '[Tree a] r b
+-- caseTree leafCase nodeCase = 'Data.Packed.Reader.mkPackedReader' $ \packed l -> do
+--    (tag :: 'Tag', packed1, l1) <- 'Data.Packed.Unpackable.runReader' 'Data.Packed.reader' packed l
+--    case tag of
+--        0 -> 'Data.Packed.Reader.runReader' leafCase packed1 l1
+--        1 -> 'Data.Packed.Reader.runReader' nodeCase packed1 l1
+--        _ -> fail "Bad Tag"
+-- @
+genCase ::
+    [PackingFlag] ->
+    -- | The name of the type to generate the function for
+    Name ->
+    Q [Dec]
+genCase flags tyName = do
+    (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
+    packedName <- newName "packed"
+    -- For each data constructor, we build names for the pattern for the case functions
+    -- Example: leafCase, nodeCase, etc.
+    let casePatterns = buildCaseFunctionName <$> cs
+    body <- buildBody casePatterns packedName
+    signature <- genCaseSignature flags tyName
+    return
+        [ signature
+        , FunD
+            (caseFName tyName)
+            [Clause (VarP <$> casePatterns) (NormalB body) []]
+        ]
+  where
+    -- Build the body (the do, binding and case expressions)
+    buildBody casePatterns packedName =
+        let bytes1VarName = mkName "b"
+            length1VarName = mkName "l"
+            flagVarName = mkName "flag"
+         in do
+                caseExpression <- buildCaseExpression flagVarName casePatterns bytes1VarName length1VarName
+                [|
+                    mkPackedReader $ \($(varP packedName)) l' -> do
+                        ($(varP flagVarName), $(varP bytes1VarName), $(varP length1VarName)) <- runPackedReader reader $(varE packedName) l'
+                        $(return caseExpression)
+                    |]
+    -- for dataconstructor Leaf, will be 'leafCase'
+    buildCaseFunctionName = conNameToCaseFunctionName . fst . getNameAndBangTypesFromCon
+    conNameToCaseFunctionName conName = mkName $ 'c' : (sanitizeConName conName) ++ "Case"
+
+    -- Build the case .. of ... expression using the list of available xxxCase, the flag and bytestring
+    buildCaseExpression :: Name -> [Name] -> Name -> Name -> Q Exp
+    buildCaseExpression e casePatterns bytesVarName lengthVarName =
+        -- For each xxxCase, we build a branch for the case expression
+        let matches =
+                ( \(conIndex, caseFuncName) -> do
+                    body <- [|runPackedReader $(varE caseFuncName) $(varE bytesVarName) $(varE lengthVarName)|]
+                    return $ Match (LitP $ IntegerL conIndex) (NormalB body) []
+                )
+                    <$> zip [0 ..] casePatterns
+            fallbackMatch = do
+                fallbackBody <- [|Prelude.fail "Bad Tag"|]
+                return $ Match WildP (NormalB fallbackBody) []
+         in caseE [|$(varE e) :: Tag|] $ matches ++ [fallbackMatch]
+
+-- For a type 'Tree', generates the following signature
+-- caseTree ::
+--     ('Data.Packed.PackedReader' '[a] r b) ->
+--     ('Data.Packed.PackedReader' '[Tree a, Tree a] r b) ->
+--     'Data.Packed.PackedReader' '[Tree a] r b
+genCaseSignature :: [PackingFlag] -> Name -> Q Dec
+genCaseSignature flags tyName = do
+    (sourceType, _) <- resolveAppliedType tyName
+    (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
+    bVar <- newName "b"
+    rVar <- newName "r"
+    let
+        bType = varT bVar
+        rType = varT rVar
+        lambdaTypes = (\c -> buildLambdaType c bType rType) <$> cs
+        outType = [t|PackedReader '[$(return sourceType)] $rType $bType|]
+    signature <- foldr (\lambda out -> [t|$lambda -> $out|]) outType lambdaTypes
+    return $ SigD (caseFName tyName) signature
+  where
+    -- From a constructor (say Leaf a), build type PackedReader '[a] r b
+    buildLambdaType con returnType restType = do
+        let constructorTypeNames = snd <$> snd (getNameAndBangTypesFromCon con)
+            packedContentType =
+                foldr
+                    ( \(i, x) xs ->
+                        if (InsertFieldSize `elem` flags) && (SkipLastFieldSize `notElem` flags || (SkipLastFieldSize `elem` flags && i /= 1))
+                            then [t|'[FieldSize, $(return x)] :++: $xs|]
+                            else [t|$(return x) ': $xs|]
+                    )
+                    [t|'[]|]
+                    $ zip (reverse [0 .. length constructorTypeNames]) constructorTypeNames
+        [t|PackedReader ($packedContentType) $restType $returnType|]
