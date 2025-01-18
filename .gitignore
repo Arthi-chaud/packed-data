@@ -1,7 +1,6 @@
 .stack-work/
 *~
 # Ignore Benchmark report
-*.html
 *.csv
 *.json
 graphs/
