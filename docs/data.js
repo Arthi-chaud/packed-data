@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1737227298376,
+  "lastUpdate": 1737284167401,
   "repoUrl": "https://github.com/Arthi-chaud/packed-haskell",
   "entries": {
     "Benchmark": [
@@ -698,6 +698,705 @@ window.BENCHMARK_DATA = {
           {
             "name": "right-most-node/1 (non-monadic-packed-with-size)",
             "value": 1.8290377008895535e-8,
+            "unit": "seconds"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "arthur.jamet@gmail.com",
+            "name": "Arthur Jamet",
+            "username": "Arthi-chaud"
+          },
+          "committer": {
+            "email": "arthur.jamet@gmail.com",
+            "name": "Arthur Jamet",
+            "username": "Arthi-chaud"
+          },
+          "distinct": true,
+          "id": "c3eda84f5403684c7496f13a38e074368d2c7ce0",
+          "message": "Readme",
+          "timestamp": "2025-01-19T10:48:38Z",
+          "tree_id": "c4073732af4fd3c89f69087edcaffe54ca81c7d3",
+          "url": "https://github.com/Arthi-chaud/packed-haskell/commit/c3eda84f5403684c7496f13a38e074368d2c7ce0"
+        },
+        "date": 1737284166588,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "build/20 (packed)",
+            "value": 0.011482007750532142,
+            "unit": "seconds"
+          },
+          {
+            "name": "build/15 (packed)",
+            "value": 0.00034627696903225284,
+            "unit": "seconds"
+          },
+          {
+            "name": "build/10 (packed)",
+            "value": 0.000011224520875311271,
+            "unit": "seconds"
+          },
+          {
+            "name": "build/5 (packed)",
+            "value": 3.5027895110281184e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "build/1 (packed)",
+            "value": 5.022249880179225e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/20 (c)",
+            "value": 0.02127392374008205,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/20 (packed)",
+            "value": 0.004573424972639724,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/20 (packed-unpacked)",
+            "value": 0.11134807674999674,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/20 (non-monadic-packed)",
+            "value": 0.005326649787920796,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/15 (c)",
+            "value": 0.00043866754013057965,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/15 (packed)",
+            "value": 0.00014023756713406902,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/15 (packed-unpacked)",
+            "value": 0.0007247330379198386,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/15 (non-monadic-packed)",
+            "value": 0.00016478612549680917,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/10 (c)",
+            "value": 0.000013281715306379154,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/10 (packed)",
+            "value": 0.000004381693156820689,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/10 (packed-unpacked)",
+            "value": 0.000018677983703279974,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/10 (non-monadic-packed)",
+            "value": 0.000005359500080838635,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/5 (c)",
+            "value": 3.594102465967643e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/5 (packed)",
+            "value": 1.6097003603923045e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/5 (packed-unpacked)",
+            "value": 4.197194751290734e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/5 (non-monadic-packed)",
+            "value": 1.4749679090927255e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/1 (c)",
+            "value": 1.4771208279769979e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/1 (packed)",
+            "value": 2.8328961534851228e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/1 (packed-unpacked)",
+            "value": 3.662439549676044e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "ast/1 (non-monadic-packed)",
+            "value": 1.280175005131958e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/20 (c)",
+            "value": 0.006362983554186184,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/20 (packed)",
+            "value": 0.004595090791178563,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/20 (packed-unpacked)",
+            "value": 0.10740221447916672,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/20 (packed-with-size)",
+            "value": 0.004476275348660426,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/20 (non-monadic-packed)",
+            "value": 0.005189252013342832,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/20 (non-monadic-packed-with-size)",
+            "value": 0.0044820064843158714,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/15 (c)",
+            "value": 0.00008417563999258937,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/15 (packed)",
+            "value": 0.00013620583426288862,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/15 (packed-unpacked)",
+            "value": 0.0006080464673706029,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/15 (packed-with-size)",
+            "value": 0.0001358387883002533,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/15 (non-monadic-packed)",
+            "value": 0.00016147999557568113,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/15 (non-monadic-packed-with-size)",
+            "value": 0.00013564323823595547,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/10 (c)",
+            "value": 0.000001554225155426556,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/10 (packed)",
+            "value": 0.000004416662774607608,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/10 (packed-unpacked)",
+            "value": 0.000011639039991768106,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/10 (packed-with-size)",
+            "value": 0.0000041892534376690385,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/10 (non-monadic-packed)",
+            "value": 0.000005088382475407357,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/10 (non-monadic-packed-with-size)",
+            "value": 0.000004362209152196712,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/5 (c)",
+            "value": 3.533410050396459e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/5 (packed)",
+            "value": 1.3702482620544416e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/5 (packed-unpacked)",
+            "value": 3.480482278057079e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/5 (packed-with-size)",
+            "value": 1.4172574456873922e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/5 (non-monadic-packed)",
+            "value": 1.4664739146913737e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/5 (non-monadic-packed-with-size)",
+            "value": 1.2624081239097882e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/1 (c)",
+            "value": 9.506097485169605e-9,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/1 (packed)",
+            "value": 2.3954066295813113e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/1 (packed-unpacked)",
+            "value": 3.2673254200808555e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/1 (packed-with-size)",
+            "value": 2.465475966804957e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/1 (non-monadic-packed)",
+            "value": 1.3332787010136451e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "sum/1 (non-monadic-packed-with-size)",
+            "value": 1.406213160694089e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/20 (c)",
+            "value": 0.0071191227415929766,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/20 (packed-needsbuilder)",
+            "value": 0.08051171408334194,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/20 (unpack-repack)",
+            "value": 0.3177818172291538,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/20 (packed-rebuild-repack)",
+            "value": 0.18015468212498575,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/15 (c)",
+            "value": 0.00007038419788742634,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/15 (packed-needsbuilder)",
+            "value": 0.0007444621474987235,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/15 (unpack-repack)",
+            "value": 0.0028876958738337888,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/15 (packed-rebuild-repack)",
+            "value": 0.0010979851111162164,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/10 (c)",
+            "value": 0.0000016566878627889057,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/10 (packed-needsbuilder)",
+            "value": 0.000017889965089678567,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/10 (unpack-repack)",
+            "value": 0.00004511784641133629,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/10 (packed-rebuild-repack)",
+            "value": 0.0000253058211397637,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/5 (c)",
+            "value": 6.727484926280954e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/5 (packed-needsbuilder)",
+            "value": 5.379485897536299e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/5 (unpack-repack)",
+            "value": 0.0000012872131191417755,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/5 (packed-rebuild-repack)",
+            "value": 6.432187065584013e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/1 (c)",
+            "value": 8.152340979783491e-9,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/1 (packed-needsbuilder)",
+            "value": 5.499764583915037e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/1 (unpack-repack)",
+            "value": 9.669135245006508e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "increment/1 (packed-rebuild-repack)",
+            "value": 5.669266052165788e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/20 (packed)",
+            "value": 0.13119646704167684,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/20 (packed-with-size)",
+            "value": 0.13364947004166083,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/15 (packed)",
+            "value": 0.0009609972492697853,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/15 (packed-with-size)",
+            "value": 0.0009429130977667853,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/10 (packed)",
+            "value": 0.00001800508823576699,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/10 (packed-with-size)",
+            "value": 0.00001822093485452009,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/5 (packed)",
+            "value": 4.719349238755634e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/5 (packed-with-size)",
+            "value": 4.567048997283069e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/1 (packed)",
+            "value": 5.258246275426468e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "pack/1 (packed-with-size)",
+            "value": 5.129475977874844e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/20 (packed)",
+            "value": 0.0026097573095140345,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/20 (non-monadic-packed)",
+            "value": 0.006366075677955289,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/20 (packed-with-size)",
+            "value": 8.873488958304307e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/20 (non-monadic-packed-with-size)",
+            "value": 7.235512632003612e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/15 (packed)",
+            "value": 0.00008214425676777842,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/15 (non-monadic-packed)",
+            "value": 0.00019562660614379297,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/15 (packed-with-size)",
+            "value": 8.670056427328405e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/15 (non-monadic-packed-with-size)",
+            "value": 5.499448692205337e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/10 (packed)",
+            "value": 0.0000025785742171484948,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/10 (non-monadic-packed)",
+            "value": 0.000006177694840144373,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/10 (packed-with-size)",
+            "value": 5.2717263915264643e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/10 (non-monadic-packed-with-size)",
+            "value": 3.884782223843443e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/5 (packed)",
+            "value": 9.802804007092443e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/5 (non-monadic-packed)",
+            "value": 1.8566680297853573e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/5 (packed-with-size)",
+            "value": 3.542121389540177e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/5 (non-monadic-packed-with-size)",
+            "value": 2.163126183518421e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/1 (packed)",
+            "value": 2.654475745274996e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/1 (non-monadic-packed)",
+            "value": 1.4143368089457392e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/1 (packed-with-size)",
+            "value": 2.5578305897380272e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "contains/1 (non-monadic-packed-with-size)",
+            "value": 1.0068509288829614e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/20 (c)",
+            "value": 4.242458117200472e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/20 (packed)",
+            "value": 0.0034901947373644666,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/20 (packed-unpacked)",
+            "value": 0.07292013579166283,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/20 (non-monadic-packed)",
+            "value": 0.003308621492181933,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/20 (packed-with-size)",
+            "value": 7.899266362668525e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/20 (non-monadic-packed-with-size)",
+            "value": 6.345621436897264e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/15 (c)",
+            "value": 2.222946037694069e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/15 (packed)",
+            "value": 0.00007359544453381011,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/15 (packed-unpacked)",
+            "value": 0.00033269389966713144,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/15 (non-monadic-packed)",
+            "value": 0.0000907593584623915,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/15 (packed-with-size)",
+            "value": 4.9599364540553123e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/15 (non-monadic-packed-with-size)",
+            "value": 2.7975249294017584e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/10 (c)",
+            "value": 1.3233807338676131e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/10 (packed)",
+            "value": 0.0000031540114274661047,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/10 (packed-unpacked)",
+            "value": 0.000005611023247109722,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/10 (non-monadic-packed)",
+            "value": 0.000002914091946934993,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/10 (packed-with-size)",
+            "value": 3.400635168947797e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/10 (non-monadic-packed-with-size)",
+            "value": 1.756762282516504e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/5 (c)",
+            "value": 1.0924505515398291e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/5 (packed)",
+            "value": 1.1890118215380375e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/5 (packed-unpacked)",
+            "value": 1.7496498310752892e-7,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/5 (non-monadic-packed)",
+            "value": 9.463009601706278e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/5 (packed-with-size)",
+            "value": 2.766010079354907e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/5 (non-monadic-packed-with-size)",
+            "value": 1.2294356015753665e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/1 (c)",
+            "value": 1.1914192279291213e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/1 (packed)",
+            "value": 2.9659252334514532e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/1 (packed-unpacked)",
+            "value": 2.6079204179547973e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/1 (non-monadic-packed)",
+            "value": 1.2375281550097754e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/1 (packed-with-size)",
+            "value": 2.7173266576437522e-8,
+            "unit": "seconds"
+          },
+          {
+            "name": "right-most-node/1 (non-monadic-packed-with-size)",
+            "value": 1.019510700948983e-8,
             "unit": "seconds"
           }
         ]
