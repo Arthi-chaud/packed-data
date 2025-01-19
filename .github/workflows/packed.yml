@@ -49,9 +49,9 @@ jobs:
         uses: ./.github/actions/cache-packed
       - name: Build
         run: |
-          stack build packed:exe:packed-exe \
-            packed:bench:packed-bench \
-            packed:test:packed-test \
+          stack build packed-data:exe:packed-exe \
+            packed-data:bench:packed-bench \
+            packed-data:test:packed-test \
             --no-run-benchmarks --no-run-tests
   Format:
     if: ${{ needs.changes.outputs.packed == 'true' && github.event_name == 'pull_request' }}
@@ -108,7 +108,7 @@ jobs:
       - name: Setup GHC
         uses: ./.github/actions/cache-packed
       - name: 'Run Benchmark'
-        run: stack build packed:bench:packed-bench --ba '--csv benchmark-report.csv -L 1'
+        run: stack build packed-data:bench:packed-bench --ba '--csv benchmark-report.csv -L 1'
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
