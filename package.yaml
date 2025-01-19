@@ -1,15 +1,15 @@
 name:                packed
 version:             0.1.0.0
-github:              "Arthi-chaud/phd"
+github:              "Arthi-chaud/packed-haskell"
 license:             BSD-3-Clause
 author:              "Arthi-chaud"
 maintainer:          "aj530@kent.ac.uk"
-copyright:           "2024 Arthi-chaud"
+copyright:           "2025 Arthi-chaud"
 
 extra-source-files:
 - README.md
 
-description:         Please see the README on GitHub at <https://github.com/Arthi-chaud/phd/code#readme>
+description:        Build, traverse and deserialise packed data in Haskell 
 
 dependencies:
 - base >= 4.7 && < 5
@@ -39,12 +39,12 @@ default-extensions:
 library:
   source-dirs: src
   dependencies:
-  - bytestring
-  - extra
-  - template-haskell
-  - bytestring-strict-builder
-  - deepseq
-  - mtl
+  - bytestring >=0.12.1.0 && <0.13
+  - extra >= 1.0
+  - template-haskell >=2.22.0.0 && <2.23
+  - bytestring-strict-builder >= 0.4.5
+  - deepseq >=1.5.0.0 && <1.6
+  - mtl >=2.3.1 && <2.4
   exposed-modules:
   - Data.Packed
   - Data.Packed.Reader
@@ -66,6 +66,7 @@ executables:
     - time
     - deepseq
     - mtl
+
 tests:
   packed-test:
     main:                Spec.hs
