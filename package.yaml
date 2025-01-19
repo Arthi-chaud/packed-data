@@ -1,4 +1,4 @@
-name:                packed
+name:                packed-data
 version:             0.1.0.0
 github:              "Arthi-chaud/packed-haskell"
 license:             BSD-3-Clause
@@ -62,7 +62,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - packed 
+    - packed-data
     - time
     - deepseq
     - mtl
@@ -79,7 +79,7 @@ tests:
     - -Wno-orphans
     - -Wno-redundant-constraints
     dependencies:
-    - packed 
+    - packed-data
     - bytestring-strict-builder
     - hspec
     - bytestring
@@ -101,7 +101,7 @@ benchmarks:
     - -Wno-orphans
     - -Wno-redundant-constraints
     dependencies:
-    - packed
+    - packed-data
     - criterion
     - bytestring
     - deepseq
@@ -128,7 +128,7 @@ benchmarks:
     - -Wno-orphans
     - -Wno-redundant-constraints
     dependencies:
-    - packed
+    - packed-data
     - criterion
     - bytestring
     - aeson
@@ -146,6 +146,6 @@ benchmarks:
     - -Wno-orphans
     - -Wno-redundant-constraints
     dependencies:
-    - packed
+    - packed-data
     - criterion
     - optparse-applicative
