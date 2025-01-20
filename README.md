@@ -1,4 +1,4 @@
-# `Packed` Haskell
+# `packed-data` for Haskell
 
 ![Hackage Version](https://img.shields.io/hackage/v/packed-data)
 [![Doc](https://img.shields.io/badge/Documentation-Haddock-purple)](https://hackage.haskell.org/package/packed-data-0.1.0.0/docs/Data-Packed.html)
