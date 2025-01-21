@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Increment (benchmark) where
 
@@ -14,6 +15,7 @@ import qualified Data.Packed.Reader as R
 import Data.Void
 import Foreign
 import Foreign.C
+import GHC.Generics (Generic, Generic1)
 import Utils
 import Prelude hiding (concat)
 
@@ -22,11 +24,10 @@ foreign import capi unsafe "benchmark.h increment" c_increment :: Ptr Void -> IO
 foreign import capi unsafe "benchmark.h build_tree" c_build_tree :: CInt -> IO (Ptr Void)
 
 foreign import capi unsafe "benchmark.h free_tree" c_free_tree :: Ptr Void -> IO ()
-data Tree1 a = Leaf1 a | Node1 (Tree1 a) (Tree1 a)
+data Tree1 a = Leaf1 !a | Node1 !(Tree1 a) !(Tree1 a) deriving (Generic, Generic1)
 
-instance NFData (Tree1 a) where
-    rnf (Leaf1 a) = a `seq` ()
-    rnf (Node1 l r) = l `seq` r `seq` ()
+instance (NFData a) => NFData (Tree1 a)
+instance NFData1 Tree1
 
 $(mkPacked ''Tree1 [])
 
@@ -56,8 +57,11 @@ computeTreeSumWithDepth n =
     !nativeTree = buildNativeTree n
 
 increment :: Tree1 Int -> Tree1 Int
-increment (Leaf1 n) = Leaf1 (n + 1)
-increment (Node1 t1 t2) = Node1 (increment t1) (increment t2)
+increment (Leaf1 n) = let !res = n + 1 in Leaf1 res
+increment (Node1 t1 t2) = Node1 res1 res2
+  where
+    !res1 = increment t1
+    !res2 = increment t2
 
 -- Produces an needsbuilder for a tree alread incremented, and finishes it
 incrementPackedRunner :: Packed '[Tree1 Int] -> IO (Packed '[Tree1 Int])
@@ -82,7 +86,7 @@ buildNativeTree :: Int -> Tree1 Int
 buildNativeTree 0 = Leaf1 1
 buildNativeTree n = Node1 subTree subTree
   where
-    subTree = buildNativeTree (n - 1)
+    !subTree = buildNativeTree (n - 1)
 
 -- Produces an unpacked tree alread incremented, and packs it
 repackingIncrementPackedRunner :: Packed '[Tree1 Int] -> IO (Packed '[Tree1 Int])
