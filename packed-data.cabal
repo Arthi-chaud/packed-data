@@ -16,6 +16,9 @@ copyright:      2025 Arthi-chaud
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
+tested-with:
+    GHC ==9.8.4
+  , GHC ==9.10.1
 extra-source-files:
     README.md
 
