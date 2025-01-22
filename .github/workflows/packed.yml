@@ -39,6 +39,18 @@ jobs:
   Build:
     needs: changes
     if: ${{ needs.changes.outputs.packed == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ghc-version: [
+          # 9.0.2,
+          # 9.2.8,
+          # 9.4.8, 
+          # 9.6.6,
+          9.8.4,
+          9.10.1,
+          # 9.12.1
+        ]
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -47,9 +59,19 @@ jobs:
           token: ${{ secrets.PAT }}
       - name: Setup GHC
         uses: ./.github/actions/cache-packed
-      - name: Build
+        with:
+          ghc-version: ${{ matrix.ghc-version }}
+
+      - name: Build (Only package)
+        if: matrix.ghc-version != '9.10.1'
         run: |
-          stack build packed-data:exe:packed-exe \
+          stack --compiler ghc-${{ matrix.ghc-version }} build packed-data:exe:packed-exe \
+            packed-data:test:packed-test \
+            --no-run-tests
+      - name: Build (All)
+        if: matrix.ghc-version == '9.10.1'
+        run: |
+          stack --compiler ghc-${{ matrix.ghc-version }} build packed-data:exe:packed-exe \
             packed-data:bench:packed-bench \
             packed-data:test:packed-test \
             --no-run-benchmarks --no-run-tests
