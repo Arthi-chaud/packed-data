@@ -61,20 +61,11 @@ jobs:
         uses: ./.github/actions/cache-packed
         with:
           ghc-version: ${{ matrix.ghc-version }}
-
-      - name: Build (Only package and tests)
-        if: matrix.ghc-version != '9.10.1'
+      - name: Build 
         run: |
           stack --compiler ghc-${{ matrix.ghc-version }} build packed-data:exe:packed-exe \
             packed-data:test:packed-test \
             --no-run-tests
-      - name: Build (All)
-        if: matrix.ghc-version == '9.10.1'
-        run: |
-          stack --compiler ghc-${{ matrix.ghc-version }} build packed-data:exe:packed-exe \
-            packed-data:bench:packed-bench \
-            packed-data:test:packed-test \
-            --no-run-benchmarks --no-run-tests
   Format:
     if: ${{ needs.changes.outputs.packed == 'true' && github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
