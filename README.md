@@ -1,7 +1,7 @@
 # `packed-data` for Haskell
 
 ![Hackage Version](https://img.shields.io/hackage/v/packed-data)
-[![Doc](https://img.shields.io/badge/Documentation-Haddock-purple)](https://hackage.haskell.org/package/packed-data-0.1.0.0/docs/Data-Packed.html)
+[![Doc](https://img.shields.io/badge/Documentation-Haddock-purple)](https://hackage.haskell.org/package/packed-data-0.1.0.1/docs/Data-Packed.html)
 
 Build, traverse and deserialise packed data in Haskell. 
 
@@ -16,7 +16,7 @@ When components of a system exchange data, each component has to make sure that 
 
 ## A portable library
 
-Unlike other implementations of packed-data-support (e.g. [Gibbon](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ECOOP.2017.26)), `packed-data` is a library that does not modify the compiler in any way. It relies solely on already existing libraries (like `ByteString`), Template Haskell and common GHC extensions. This means that, virtually, `packed-data` can be used with any version of GHC (although, as of today, it has only been tested with GHC 9.10).
+Unlike other implementations of packed-data-support (e.g. [Gibbon](https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.ECOOP.2017.26)), `packed-data` is a library that does not modify the compiler in any way. It relies solely on already existing libraries (like `ByteString`), Template Haskell and common GHC extensions. This means that, virtually, `packed-data` can be used with any version of GHC (as of today, it has been tested GHC 9.2-9.12).
 
 Its API is inspired by an example from the [Linear Haskell](https://dl.acm.org/doi/10.1145/3158093) paper (code available [here](https://github.com/tweag/linear-types/blob/12bed0d41d599e2697b29c5c4b37990642970e6c/Examples/src/Cursors/PureStorable.hs)).
 
@@ -55,7 +55,7 @@ packTree = pack
 
 Take a look at the `benchmark` directory for more examples.
 
-Documentation is available on [Hackage](https://hackage.haskell.org/package/packed-data-0.1.0.0/docs/Data-Packed.html)
+Documentation is available on [Hackage](https://hackage.haskell.org/package/packed-data-0.1.0.1/docs/Data-Packed.html)
 
 ## Benchmark
 
