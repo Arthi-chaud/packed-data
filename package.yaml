@@ -18,6 +18,7 @@ dependencies:
 tested-with:
 - GHC ==9.8.4
 - GHC ==9.10.1
+- GHC ==9.12.1
 
 ghc-options:
 - -Wall

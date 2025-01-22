@@ -49,7 +49,7 @@ jobs:
           # 9.6.6,
           9.8.4,
           9.10.1,
-          # 9.12.1
+          9.12.1
         ]
     runs-on: ubuntu-latest
     steps:
@@ -122,7 +122,7 @@ jobs:
           # 9.6.6,
           9.8.4,
           9.10.1,
-          # 9.12.1
+          9.12.1
         ]
     if: ${{ needs.changes.outputs.packed == 'true' && always() }}
     steps:
