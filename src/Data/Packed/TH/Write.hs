@@ -9,7 +9,7 @@ import Language.Haskell.TH
 
 -- For a data type 'Tree', will generate the function name 'writeTree'
 writeFName :: Name -> Name
-writeFName tyName = mkName $ "write" ++ nameBase tyName
+writeFName tyName = mkName $ "write" ++ sanitizeConName tyName
 
 -- | Generates a function that serialises and writes a value into a 'Needs'
 --

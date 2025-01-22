@@ -11,7 +11,7 @@ import Data.Packed.Unpackable
 import Language.Haskell.TH
 
 readFName :: Name -> Name
-readFName tyName = mkName $ "read" ++ nameBase tyName
+readFName tyName = mkName $ "read" ++ sanitizeConName tyName
 
 -- | Generates an function to read (i.e. deserialise) the given data type.
 --

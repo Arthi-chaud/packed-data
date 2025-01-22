@@ -11,7 +11,7 @@ import Language.Haskell.TH
 
 -- For a data type 'Tree', will generate the function name 'skipTree'
 skipFName :: Name -> Name
-skipFName tyName = mkName $ "skip" ++ nameBase tyName
+skipFName tyName = mkName $ "skip" ++ sanitizeConName tyName
 
 -- | Generates an function to skip a value of the given type in a 'Data.Packed.Packed'
 --

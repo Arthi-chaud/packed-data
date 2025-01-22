@@ -10,7 +10,7 @@ import Data.Packed.Utils ((:++:))
 import Language.Haskell.TH
 
 caseFName :: Name -> Name
-caseFName tyName = mkName $ "case" ++ nameBase tyName
+caseFName tyName = mkName $ "case" ++ sanitizeConName tyName
 
 -- | Generates a function to allow pattern matching a packed data type using the data constructors
 --
