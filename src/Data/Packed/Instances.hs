@@ -7,11 +7,10 @@
 -- | This module provides instances of 'Data.Packed.Packable' and 'Data.Packed.Unpackable' for basic types like 'Prelude.List' and 'Prelude.Maybe'
 module Data.Packed.Instances where
 
-import Data.List (List)
 import Data.Packed.TH
 import Data.Packed.Unpackable
 import Prelude hiding (readList)
 
-$(mkPacked ''List [])
+$(mkPacked ''[] [])
 $(mkPacked ''Maybe [])
 $(mkPacked ''Either [])

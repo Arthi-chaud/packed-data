@@ -63,7 +63,9 @@ skipWithFieldSize = mkPackedReader $ \packed l -> do
 {-# INLINE writeWithFieldSize #-}
 
 -- | Write a value into a 'Data.Packed.Needs.Needs', along with its 'FieldSize'
-writeWithFieldSize :: (Packable a) => a -> NeedsWriter' '[FieldSize, a] r t
+--
+-- Note: Universal quantifier is nedded for GHC < 9.10, because of ScopedTypeVariables
+writeWithFieldSize :: forall a r t. (Packable a) => a -> NeedsWriter' '[FieldSize, a] r t
 writeWithFieldSize a = write (FieldSize size) N.>> applyNeeds aNeeds
   where
     size = fromIntegral (builderLength aBuilder)

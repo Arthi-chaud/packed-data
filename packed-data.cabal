@@ -16,6 +16,13 @@ copyright:      2025 Arthi-chaud
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
+tested-with:
+    GHC ==9.2.8
+  , GHC ==9.4.8
+  , GHC ==9.6.6
+  , GHC ==9.8.4
+  , GHC ==9.10.1
+  , GHC ==9.12.1
 extra-source-files:
     README.md
 
@@ -70,12 +77,12 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
-    , bytestring >=0.12.1.0 && <0.13
+    , bytestring >=0.11.0.0 && <0.13
     , bytestring-strict-builder >=0.4.5 && <0.5
-    , deepseq >=1.5.0.0 && <1.6
+    , deepseq >=1.4.6.1 && <1.6
     , extra >=1.0 && <2.0
-    , mtl >=2.3.1 && <2.4
-    , template-haskell >=2.22.0.0 && <2.23
+    , mtl >=2.2.2 && <2.4
+    , template-haskell >=2.18.0.0 && <=2.24.0.0
   default-language: Haskell2010
 
 executable packed-exe
@@ -102,7 +109,7 @@ executable packed-exe
     , deepseq
     , mtl
     , packed-data
-    , time ==1.14.*
+    , time
   default-language: Haskell2010
 
 test-suite packed-test

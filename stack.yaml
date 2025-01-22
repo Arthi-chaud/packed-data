@@ -2,5 +2,4 @@ snapshot: nightly-2024-12-13 # Uses GHC 9.10.1
 packages:
 - .
 system-ghc: true
-allow-newer: true
 notify-if-nix-on-path: false
