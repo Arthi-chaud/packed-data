@@ -121,6 +121,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup GHC
         uses: ./.github/actions/cache-packed
+        with:
+          ghc-version: ${{ matrix.ghc-version }}
       - name: Run unit tests
         run: stack test --compiler ghc-${{ matrix.ghc-version }}
   Benchmark:
