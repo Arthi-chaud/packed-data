@@ -144,10 +144,9 @@ runReader ::
     PackedReader p r v ->
     Packed (p :++: r) ->
     IO (v, Packed r)
-runReader (PackedReader f) (Packed (BS fptr l)) = do
+runReader (PackedReader f) (Packed (PS fptr _ l)) = do
     (!v, !ptr1, !l1) <- f (castPtr $ unsafeForeignPtrToPtr fptr) l
-    !fptr1 <- newForeignPtr_ ptr1
-    Prelude.return (v, Packed (BS fptr1 l1))
+    Prelude.return (v, unsafeToPacked' ptr1 l1)
 
 {-# INLINE finishReader #-}
 

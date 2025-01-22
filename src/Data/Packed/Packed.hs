@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 module Data.Packed.Packed (Packed (..), unsafeToPacked, unsafeToPacked', fromPacked, unsafeCastPacked, duplicate) where
 
 import Control.DeepSeq
@@ -38,4 +39,9 @@ unsafeCastPacked :: Packed a -> Packed b
 unsafeCastPacked = unsafeToPacked . fromPacked
 
 unsafeToPacked' :: Ptr a -> Int -> Packed b
-unsafeToPacked' (Ptr addr) l = Packed (BS (ForeignPtr addr FinalPtr) l)
+unsafeToPacked' (Ptr addr) l = 
+#if MIN_VERSION_bytestring(0,11,0)
+    Packed (BS (ForeignPtr addr FinalPtr) l)
+#else
+    Packed (PS (ForeignPtr addr FinalPtr) 0 l)
+#endif
