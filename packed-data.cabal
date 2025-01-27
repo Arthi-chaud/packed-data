@@ -214,7 +214,6 @@ benchmark packed-bench
       List
       OutputData
       Pack
-      Plot
       Sum
       Traversals
       Utils
@@ -240,9 +239,7 @@ benchmark packed-bench
   c-sources:
       benchmark/benchmark.c
   build-depends:
-      Chart
-    , Chart-diagrams
-    , aeson
+      aeson
     , base >=4.7 && <5
     , bytestring
     , cassava

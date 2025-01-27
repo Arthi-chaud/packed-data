@@ -12,7 +12,6 @@ import qualified Increment
 import qualified List
 import Options.Applicative (execParser)
 import qualified Pack
-import Plot
 import qualified Sum
 import System.Directory
 import qualified Traversals
@@ -21,7 +20,6 @@ main :: IO ()
 main = do
     mode <- execParser (describe defaultConfig)
     when (isNothing (csvPath mode) && modeExportOtherThanCsv mode) $ do
-        putStrLn "Warning: Graphs will not be generated."
         putStrLn "Warning: Report for CI will not be generated."
         putStrLn "Warning: Use the CSV export function to generate graphs and CI report."
     -- Criterion seems to append the result to the file if it already exists
@@ -35,9 +33,6 @@ main = do
     case csvPath mode of
         Nothing -> return ()
         Just exportPath -> do
-            putStrLn "Generating graph..."
-            generateGraphs exportPath
-            putStrLn "Generation finished."
             putStrLn "Generating CI report..."
             generateCIReport exportPath
             putStrLn "Generation CI report."

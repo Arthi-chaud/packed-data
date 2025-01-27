@@ -119,10 +119,8 @@ benchmarks:
     - vector
     - split
     - listsafe
-    - Chart
     - filepath
     - directory
-    - Chart-diagrams
     - aeson
     - mtl
   bigjson-bench:

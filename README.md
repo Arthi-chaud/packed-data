@@ -69,4 +69,3 @@ stack bench --ba --csv bench.csv
 stach bench --ba '--csv bench.csv sums'
 ```
 
-Note: Graphs of the benchmark results will be generated in the `graph/` directory when saving the report as CSV.
