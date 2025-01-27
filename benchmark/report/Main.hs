@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Control.Monad
+import Criterion
 import Data.List (intercalate)
 import Go
 import System.Directory
@@ -13,8 +14,11 @@ main = do
     isInStackProject <- doesFileExist "package.yaml"
     unless isInStackProject $
         fail "Please run this at the root of the packed-data project"
-    res <- runGoBenchmarks s
-    print (values res)
+    goRes <- runGoBenchmarks s
+    criterionRes <- runCriterionBenchmarks s
+    print goRes
+    print criterionRes
+    return ()
 
 getSuite :: IO BenchSuite
 getSuite = do

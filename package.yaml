@@ -174,3 +174,4 @@ benchmarks:
     - bytestring
     - process-extras
     - directory
+    - scientific

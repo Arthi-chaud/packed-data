@@ -207,6 +207,7 @@ benchmark report
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
+      Criterion
       Go
       Types
       Paths_packed_data
@@ -231,6 +232,7 @@ benchmark report
     , directory
     , process
     , process-extras
+    , scientific
   default-language: Haskell2010
 
 benchmark tree-bench
