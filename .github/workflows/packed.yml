@@ -135,7 +135,7 @@ jobs:
       - name: Setup GHC
         uses: ./.github/actions/cache-packed
       - name: 'Run Benchmark'
-        run: stack build packed-data:bench:packed-bench --ba '--csv benchmark-report.csv -L 1'
+        run: stack build packed-data:bench:tree-bench --ba '--csv benchmark-report.csv -L 1'
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:

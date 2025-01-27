@@ -94,12 +94,12 @@ tests:
     - bytestring
 
 benchmarks:
-  packed-bench:
-    source-dirs:      benchmark
+  tree-bench:
+    source-dirs:      benchmark/tree
     main:             Main.hs
     include-dirs: 
     - benchmark 
-    c-sources: benchmark/benchmark.c
+    c-sources: benchmark/tree/benchmark.c
     cc-options: -O2
     ghc-options:
     - -threaded

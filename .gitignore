@@ -5,3 +5,4 @@
 *.json
 graphs/
 sum.c
+dist-newstyle

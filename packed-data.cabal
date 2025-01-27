@@ -203,7 +203,7 @@ benchmark bigjson-bench
     , packed-data
   default-language: Haskell2010
 
-benchmark packed-bench
+benchmark tree-bench
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
@@ -221,7 +221,7 @@ benchmark packed-bench
   autogen-modules:
       Paths_packed_data
   hs-source-dirs:
-      benchmark
+      benchmark/tree
   default-extensions:
       DataKinds
       TypeOperators
@@ -237,7 +237,7 @@ benchmark packed-bench
   include-dirs:
       benchmark
   c-sources:
-      benchmark/benchmark.c
+      benchmark/tree/benchmark.c
   build-depends:
       aeson
     , base >=4.7 && <5
