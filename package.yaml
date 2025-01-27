@@ -156,3 +156,21 @@ benchmarks:
     - packed-data
     - criterion
     - optparse-applicative
+
+  # Note: Not a benchmark suite, compiles results for paper
+  report:
+    source-dirs:      benchmark/report
+    main: Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-T
+    - -O2
+    - -Wno-unused-top-binds
+    - -Wno-orphans
+    - -Wno-redundant-constraints
+    dependencies:
+    - process
+    - bytestring
+    - process-extras
+    - directory
