@@ -51,7 +51,7 @@ parseOutputLine bs =
     let res = do
             treeSize <- readMaybe rawTreeSize
             time <- readMaybe rawTime
-            return (treeSize, time)
+            return (treeSize, time * 10 ^^ (-9))
      in maybe (fail "Parsing error") return res
   where
     -- BenchmarkSum_5-10 -> 5

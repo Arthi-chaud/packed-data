@@ -172,6 +172,6 @@ benchmarks:
     dependencies:
     - process
     - bytestring
-    - process-extras
     - directory
     - scientific
+    - cassava
