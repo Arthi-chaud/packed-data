@@ -203,7 +203,39 @@ benchmark bigjson-bench
     , packed-data
   default-language: Haskell2010
 
-benchmark packed-bench
+benchmark report
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Criterion
+      Go
+      Types
+      Paths_packed_data
+  autogen-modules:
+      Paths_packed_data
+  hs-source-dirs:
+      benchmark/report
+  default-extensions:
+      DataKinds
+      TypeOperators
+      KindSignatures
+      GADTs
+      LambdaCase
+      TemplateHaskell
+      TemplateHaskellQuotes
+      TupleSections
+      QualifiedDo
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-T -O2 -Wno-unused-top-binds -Wno-orphans -Wno-redundant-constraints
+  build-depends:
+      base >=4.7 && <5
+    , bytestring
+    , cassava
+    , directory
+    , process
+    , scientific
+  default-language: Haskell2010
+
+benchmark tree-bench
   type: exitcode-stdio-1.0
   main-is: Main.hs
   other-modules:
@@ -214,7 +246,6 @@ benchmark packed-bench
       List
       OutputData
       Pack
-      Plot
       Sum
       Traversals
       Utils
@@ -222,7 +253,7 @@ benchmark packed-bench
   autogen-modules:
       Paths_packed_data
   hs-source-dirs:
-      benchmark
+      benchmark/tree
   default-extensions:
       DataKinds
       TypeOperators
@@ -238,11 +269,9 @@ benchmark packed-bench
   include-dirs:
       benchmark
   c-sources:
-      benchmark/benchmark.c
+      benchmark/tree/benchmark.c
   build-depends:
-      Chart
-    , Chart-diagrams
-    , aeson
+      aeson
     , base >=4.7 && <5
     , bytestring
     , cassava

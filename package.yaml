@@ -94,12 +94,12 @@ tests:
     - bytestring
 
 benchmarks:
-  packed-bench:
-    source-dirs:      benchmark
+  tree-bench:
+    source-dirs:      benchmark/tree
     main:             Main.hs
     include-dirs: 
     - benchmark 
-    c-sources: benchmark/benchmark.c
+    c-sources: benchmark/tree/benchmark.c
     cc-options: -O2
     ghc-options:
     - -threaded
@@ -119,10 +119,8 @@ benchmarks:
     - vector
     - split
     - listsafe
-    - Chart
     - filepath
     - directory
-    - Chart-diagrams
     - aeson
     - mtl
   bigjson-bench:
@@ -158,3 +156,22 @@ benchmarks:
     - packed-data
     - criterion
     - optparse-applicative
+
+  # Note: Not a benchmark suite, compiles results for paper
+  report:
+    source-dirs:      benchmark/report
+    main: Main.hs
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-T
+    - -O2
+    - -Wno-unused-top-binds
+    - -Wno-orphans
+    - -Wno-redundant-constraints
+    dependencies:
+    - process
+    - bytestring
+    - directory
+    - scientific
+    - cassava
