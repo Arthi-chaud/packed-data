@@ -59,13 +59,15 @@ func BenchmarkGetRightMost_10(b *testing.B) { GetRightMostN(b, 10) }
 func BenchmarkGetRightMost_15(b *testing.B) { GetRightMostN(b, 15) }
 func BenchmarkGetRightMost_20(b *testing.B) { GetRightMostN(b, 20) }
 
-func Increment(t *Tree) {
+func Increment(t *Tree) *Tree {
+	res := Tree{}
 	if t.Left == nil && t.Right == nil {
-		t.Value = t.Value + 1
+		res.Value = t.Value + 1
 	} else {
-		Increment(t.Left)
-		Increment(t.Right)
+		res.Left = Increment(t.Left)
+		res.Right = Increment(t.Right)
 	}
+	return &res
 }
 
 func IncrementN(b *testing.B, n int) {
@@ -73,7 +75,7 @@ func IncrementN(b *testing.B, n int) {
 	t := BuildTree(n)
 	b.ResetTimer()
 	for range b.N {
-		Increment(t)
+		_ = Increment(t)
 	}
 }
 
@@ -82,6 +84,30 @@ func BenchmarkIncrement_5(b *testing.B)  { IncrementN(b, 5) }
 func BenchmarkIncrement_10(b *testing.B) { IncrementN(b, 10) }
 func BenchmarkIncrement_15(b *testing.B) { IncrementN(b, 15) }
 func BenchmarkIncrement_20(b *testing.B) { IncrementN(b, 20) }
+
+func IncrementInplace(t *Tree) {
+	if t.Left == nil && t.Right == nil {
+		t.Value = t.Value + 1
+	} else {
+		IncrementInplace(t.Left)
+		IncrementInplace(t.Right)
+	}
+}
+
+func IncrementInplaceN(b *testing.B, n int) {
+
+	t := BuildTree(n)
+	b.ResetTimer()
+	for range b.N {
+		IncrementInplace(t)
+	}
+}
+
+func BenchmarkIncrementInplace_1(b *testing.B)  { IncrementInplaceN(b, 1) }
+func BenchmarkIncrementInplace_5(b *testing.B)  { IncrementInplaceN(b, 5) }
+func BenchmarkIncrementInplace_10(b *testing.B) { IncrementInplaceN(b, 10) }
+func BenchmarkIncrementInplace_15(b *testing.B) { IncrementInplaceN(b, 15) }
+func BenchmarkIncrementInplace_20(b *testing.B) { IncrementInplaceN(b, 20) }
 
 type AST struct {
 	Value int
