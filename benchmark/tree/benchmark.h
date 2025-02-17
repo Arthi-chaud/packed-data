@@ -42,5 +42,6 @@ struct Tree {
 long sum(struct Tree *t);
 long get_right_most(struct Tree *t);
 struct Tree *build_tree(int size);
-void increment(struct Tree *t);
+void increment_inplace(struct Tree *t);
+struct Tree *increment(struct Tree *t);
 void free_tree(struct Tree *t);

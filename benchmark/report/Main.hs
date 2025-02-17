@@ -31,17 +31,19 @@ orderBenchResults benchs = fst <$> sortBy (\(_, ia) (_, ib) -> ia `compare` ib) 
     benchWithIndex = (\b -> (b, curry benchIndex (language b) (name b))) <$> benchs
     benchIndex :: (String, Maybe String) -> Int
     benchIndex = \case
+        ("C", Just "Inplace") -> 0
+        ("C", Just "Produces new tree") -> 1
         ("C", _) -> 0
-        ("Haskell", _) -> 1
-        ("packed-data", Just "W/o Indirections") -> 2
-        ("packed-data", Just "W/ Indirections") -> 3
-        ("packed-data", Just "Non-monadic, w/o Indirections") -> 8
-        ("packed-data", Just "Non-monadic, w/ Indirections") -> 9
-        ("packed-data", Just "Unpacking, then traverse") -> 4
-        ("packed-data", Just "Using NeedsBuilder") -> 5
-        ("packed-data", Just "Unpacking, increment and repack") -> 6
-        ("packed-data", Just "Deserialise and increment, and repack") -> 7
-        ("Golang", _) -> 10
+        ("Haskell", _) -> 2
+        ("packed-data", Just "W/o Indirections") -> 3
+        ("packed-data", Just "W/ Indirections") -> 4
+        ("packed-data", Just "Non-monadic, w/o Indirections") -> 9
+        ("packed-data", Just "Non-monadic, w/ Indirections") -> 10
+        ("packed-data", Just "Unpacking, then traverse") -> 5
+        ("packed-data", Just "Using NeedsBuilder") -> 6
+        ("packed-data", Just "Unpacking, increment and repack") -> 7
+        ("packed-data", Just "Deserialise and increment, and repack") -> 8
+        ("Golang", _) -> 11
         c -> error $ show c
 
 getSuite :: IO BenchSuite
