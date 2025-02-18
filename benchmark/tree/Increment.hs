@@ -19,7 +19,9 @@ import GHC.Generics (Generic, Generic1)
 import Utils
 import Prelude hiding (concat)
 
-foreign import capi unsafe "benchmark.h increment" c_increment :: Ptr Void -> IO ()
+foreign import capi unsafe "benchmark.h increment_inplace" c_increment_inplace :: Ptr Void -> IO ()
+
+foreign import capi unsafe "benchmark.h increment" c_increment :: Ptr Void -> IO (Ptr Void)
 
 foreign import capi unsafe "benchmark.h build_tree" c_build_tree :: CInt -> IO (Ptr Void)
 
@@ -42,7 +44,9 @@ computeTreeSumWithDepth n =
     bgroup
         (depthGroupName n)
         [ envWithCleanup (c_build_tree (fromIntegral n)) c_free_tree $
-            bench cTestName . nfAppIO c_increment
+            bench (cTestName ++ "-inplace") . nfAppIO c_increment_inplace
+        , envWithCleanup (c_build_tree (fromIntegral n)) c_free_tree $
+            bench (cTestName ++ "-new-tree") . nfAppIO c_increment
         , bench nativeTestName $
             nf increment nativeTree
         , bench (intercalate "-" [packedTestName, "needsbuilder"]) $

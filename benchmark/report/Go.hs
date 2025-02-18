@@ -2,7 +2,7 @@ module Go where
 
 import Control.Monad (unless)
 import Data.Char (isDigit, isSpace)
-import Data.List (isPrefixOf)
+import Data.List (groupBy, isPrefixOf)
 import System.Directory (doesFileExist)
 import System.IO hiding (stdout)
 import System.Process
@@ -13,7 +13,7 @@ import Prelude
 goTestPath :: String
 goTestPath = "benchmark/report/go/benchmarks_test.go"
 
-runGoBenchmarks :: BenchSuite -> IO BenchmarkResult
+runGoBenchmarks :: BenchSuite -> IO [BenchmarkResult]
 runGoBenchmarks s = do
     goIsFound <- doesFileExist goTestPath
     unless goIsFound $
@@ -32,26 +32,29 @@ suiteToGolangBenchName = \case
     RightMost -> "BenchmarkGetRightMost"
     Incr -> "BenchmarkIncrement"
 
-parseOutput :: (MonadFail m) => BenchSuite -> String -> m BenchmarkResult
+parseOutput :: (MonadFail m) => BenchSuite -> String -> m [BenchmarkResult]
 parseOutput s stdout = do
     parsedLines <- parseOutputLine `mapM` l
-    return
-        BenchmarkResult
-            { suite = s
-            , values = parsedLines
-            , language = "Golang"
-            , name = Nothing
-            }
+    let groups = groupBy (\(sa, _, _) (sb, _, _) -> sa == sb) parsedLines
+    return $ groupToBenchRes <$> groups
   where
+    groupToBenchRes group =
+        let
+            (label, _, _) = head group
+            n = if label == "BenchmarkIncrementInplace" then "Inplace" else "Produces new tree"
+            v = (\(_, size, time) -> (size, time)) <$> group
+         in
+            BenchmarkResult{suite = s, values = v, language = "Golang", name = Just n}
     suiteName = suiteToGolangBenchName s
     l = filter (suiteName `isPrefixOf`) $ lines stdout
 
-parseOutputLine :: (MonadFail m) => String -> m (Int, Double)
+parseOutputLine :: (MonadFail m) => String -> m (String, Int, Double)
 parseOutputLine bs =
     let res = do
+            let suiteName = takeWhile (/= '_') bs
             treeSize <- readMaybe rawTreeSize
             time <- readMaybe rawTime
-            return (treeSize, time * 10 ^^ (-9))
+            return (suiteName, treeSize, time * 10 ^^ (-9))
      in maybe (fail "Parsing error") return res
   where
     -- BenchmarkSum_5-10 -> 5

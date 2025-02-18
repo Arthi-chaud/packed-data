@@ -2,6 +2,7 @@
 #include "benchmark.h"
 #include <assert.h>
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -81,7 +82,20 @@ long get_right_most(struct Tree *t) {
   }
 }
 
-void increment(struct Tree *t) {
+struct Tree *increment(struct Tree *t) {
+  struct Tree *res = malloc(sizeof(struct Tree));
+  if (t->tag == LEAF) {
+    res->left = NULL;
+    res->right = NULL;
+    res->value = t->value + 1;
+  } else {
+    res->left = increment(t->left);
+    res->right = increment(t->right);
+  }
+  return res;
+}
+
+void increment_inplace(struct Tree *t) {
   if (t->tag == LEAF) {
     t->value++;
   } else {

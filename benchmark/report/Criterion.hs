@@ -64,7 +64,8 @@ parseCSVLineForCase line =
 
 cases :: [(String, String, Maybe String)]
 cases =
-    [ ("c", "C", Nothing)
+    [ ("c-inplace", "C", Just "Inplace")
+    , ("c-new-tree", "C", Just "Produces new tree")
     , ("native", "Haskell", Nothing)
     , ("packed", "packed-data", Just "W/o Indirections")
     , ("packed-with-size", "packed-data", Just "W/ Indirections")
