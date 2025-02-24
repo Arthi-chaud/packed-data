@@ -63,18 +63,16 @@ library:
   - Data.Packed.Skippable
 
 executables:
-  packed-exe:
+  examples:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         examples 
     ghc-options:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wno-unused-top-binds
     dependencies:
     - packed-data
-    - time
-    - deepseq
-    - mtl
 
 tests:
   packed-test:

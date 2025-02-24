@@ -63,7 +63,7 @@ jobs:
           ghc-version: ${{ matrix.ghc-version }}
       - name: Build 
         run: |
-          stack --compiler ghc-${{ matrix.ghc-version }} build packed-data:exe:packed-exe \
+          stack --compiler ghc-${{ matrix.ghc-version }} build packed-data:exe:examples \
             packed-data:test:packed-test \
             --no-run-tests
   Format:
@@ -98,7 +98,7 @@ jobs:
       - name: 'Run HLint'
         uses: rwe/actions-hlint-run@v2
         with:
-          path: '["app/", "src/", "test/"]'
+          path: '["src/", "test/"]'
           fail-on: warning
   Tests:
     runs-on: ubuntu-latest
