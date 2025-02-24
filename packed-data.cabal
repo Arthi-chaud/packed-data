@@ -85,14 +85,19 @@ library
     , template-haskell >=2.18.0.0 && <=2.24.0.0
   default-language: Haskell2010
 
-executable packed-exe
+executable examples
   main-is: Main.hs
   other-modules:
+      Increment
+      Pack
+      Traversal
+      Tree
+      Unpack
       Paths_packed_data
   autogen-modules:
       Paths_packed_data
   hs-source-dirs:
-      app
+      examples
   default-extensions:
       DataKinds
       TypeOperators
@@ -103,13 +108,10 @@ executable packed-exe
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N -Wno-unused-top-binds
   build-depends:
       base >=4.7 && <5
-    , deepseq
-    , mtl
     , packed-data
-    , time
   default-language: Haskell2010
 
 test-suite packed-test
