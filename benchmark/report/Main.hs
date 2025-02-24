@@ -19,7 +19,7 @@ main = do
         fail "Please run this at the root of the packed-data project"
     goRes <- runGoBenchmarks s
     criterionRes <- runCriterionBenchmarks s
-    let benchRes = goRes : criterionRes
+    let benchRes = goRes ++ criterionRes
         reportFileName = toLower <$> show s ++ "-report.csv"
     BS.writeFile reportFileName $
         encodeDefaultOrderedByName $
@@ -43,6 +43,8 @@ orderBenchResults benchs = fst <$> sortBy (\(_, ia) (_, ib) -> ia `compare` ib) 
         ("packed-data", Just "Using NeedsBuilder") -> 6
         ("packed-data", Just "Unpacking, increment and repack") -> 7
         ("packed-data", Just "Deserialise and increment, and repack") -> 8
+        ("Golang", Just "Inplace") -> 11
+        ("Golang", Just "Produces new tree") -> 12
         ("Golang", _) -> 11
         c -> error $ show c
 
