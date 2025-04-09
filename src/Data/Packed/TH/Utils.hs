@@ -5,6 +5,8 @@ module Data.Packed.TH.Utils (
     getNameAndBangTypesFromCon,
     sanitizeConName,
     getBranchesTyList,
+    getBranchTyList,
+    typeIsFieldSize,
 ) where
 
 import Control.Monad
@@ -65,17 +67,20 @@ sanitizeConName conName = strName $ nameBase conName
 getBranchesTyList :: Name -> [PackingFlag] -> Q [[Type]]
 getBranchesTyList tyName flags = do
     (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
-    getBranchType `mapM` cs
+    forM cs (`getBranchTyList` flags)
+
+getBranchTyList :: Con -> [PackingFlag] -> Q [Type]
+getBranchTyList con flags = do
+    fields <- forM consValueTypesWithIndex $ \(valIdx, valTy) ->
+        if (InsertFieldSize `elem` flags)
+            && (SkipLastFieldSize `notElem` flags || (SkipLastFieldSize `elem` flags && valIdx /= consValueCount - 1))
+            then [t|FieldSize|] <&> (: [valTy])
+            else return [valTy]
+    return $ concat fields
   where
-    getBranchType :: Con -> Q [Type]
-    getBranchType con = do
-        fields <- forM consValueTypesWithIndex $ \(valIdx, valTy) ->
-            if (InsertFieldSize `elem` flags)
-                && (SkipLastFieldSize `notElem` flags || (SkipLastFieldSize `elem` flags && valIdx /= consValueCount - 1))
-                then [t|FieldSize|] <&> (: [valTy])
-                else return [valTy]
-        return $ concat fields
-      where
-        consValueTypes = snd <$> snd (getNameAndBangTypesFromCon con)
-        consValueCount = length consValueTypes
-        consValueTypesWithIndex = zip [0 .. length consValueTypes] consValueTypes
+    consValueTypes = snd <$> snd (getNameAndBangTypesFromCon con)
+    consValueCount = length consValueTypes
+    consValueTypesWithIndex = zip [0 .. length consValueTypes] consValueTypes
+
+typeIsFieldSize :: Type -> Bool
+typeIsFieldSize = (== ConT ''FieldSize)
