@@ -7,6 +7,7 @@ module Data.Packed.TH.Utils (
     getBranchesTyList,
     getBranchTyList,
     typeIsFieldSize,
+    getConFieldsIdxAndNeedsFS,
 ) where
 
 import Control.Monad
@@ -71,12 +72,19 @@ getBranchesTyList tyName flags = do
 
 getBranchTyList :: Con -> [PackingFlag] -> Q [Type]
 getBranchTyList con flags = do
-    fields <- forM consValueTypesWithIndex $ \(valIdx, valTy) ->
+    fields <- forM (getConFieldsIdxAndNeedsFS con flags) $ \(fieldTy, _, needsFS) ->
+        if needsFS
+            then [t|FieldSize|] <&> (: [fieldTy])
+            else return [fieldTy]
+    return $ concat fields
+
+getConFieldsIdxAndNeedsFS :: Con -> [PackingFlag] -> [(Type, Int, Bool)]
+getConFieldsIdxAndNeedsFS con flags =
+    consValueTypesWithIndex <&> \(valIdx, valTy) ->
         if (InsertFieldSize `elem` flags)
             && (SkipLastFieldSize `notElem` flags || (SkipLastFieldSize `elem` flags && valIdx /= consValueCount - 1))
-            then [t|FieldSize|] <&> (: [valTy])
-            else return [valTy]
-    return $ concat fields
+            then (valTy, valIdx, True)
+            else (valTy, valIdx, False)
   where
     consValueTypes = snd <$> snd (getNameAndBangTypesFromCon con)
     consValueCount = length consValueTypes

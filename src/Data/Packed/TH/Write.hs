@@ -1,5 +1,6 @@
 module Data.Packed.TH.Write (genWrite, writeFName) where
 
+import Control.Monad
 import Data.Packed.Needs
 import Data.Packed.Packable
 import Data.Packed.TH.Flag (PackingFlag)
@@ -45,13 +46,7 @@ genWrite flags tyName = do
             cs
     -- For each of the data constructor of the type, we generate the corresponding `writeConXXX`
     -- We define the Tag using the index of the data constructor
-    conWriter <-
-        mapM
-            ( \(index, constructor) ->
-                let (conName, types) = getNameAndBangTypesFromCon constructor
-                 in genConWrite flags conName index types
-            )
-            $ zip [0 ..] cs
+    conWriter <- forM (zip [0 ..] cs) (\(index, con) -> genConWrite flags con index)
     signature <- genWriteSignature tyName
     return $ concat conWriter ++ [signature, FunD (writeFName tyName) clauses]
 
