@@ -20,6 +20,7 @@ module Data.Packed (
     isolate,
     fromPacked,
     unsafeToPacked,
+    unsafeToPacked',
     unsafeCastPacked,
 
     -- * PackedReader
