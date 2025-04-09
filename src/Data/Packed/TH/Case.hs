@@ -2,11 +2,9 @@
 
 module Data.Packed.TH.Case (caseFName, genCase) where
 
-import Data.Packed.FieldSize
 import Data.Packed.Reader hiding (return)
 import Data.Packed.TH.Flag
-import Data.Packed.TH.Utils (Tag, getNameAndBangTypesFromCon, resolveAppliedType, sanitizeConName)
-import Data.Packed.Utils ((:++:))
+import Data.Packed.TH.Utils (Tag, getBranchesTyList, getNameAndBangTypesFromCon, resolveAppliedType, sanitizeConName)
 import Language.Haskell.TH
 
 caseFName :: Name -> Name
@@ -89,27 +87,19 @@ genCase flags tyName = do
 genCaseSignature :: [PackingFlag] -> Name -> Q Dec
 genCaseSignature flags tyName = do
     (sourceType, _) <- resolveAppliedType tyName
-    (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
     bVar <- newName "b"
     rVar <- newName "r"
+    branchesTypes <- getBranchesTyList tyName flags
     let
         bType = varT bVar
         rType = varT rVar
-        lambdaTypes = (\c -> buildLambdaType c bType rType) <$> cs
+        lambdaTypes = (\branchTypes -> buildLambdaType branchTypes bType rType) <$> branchesTypes
         outType = [t|PackedReader '[$(return sourceType)] $rType $bType|]
     signature <- foldr (\lambda out -> [t|$lambda -> $out|]) outType lambdaTypes
     return $ SigD (caseFName tyName) signature
   where
     -- From a constructor (say Leaf a), build type PackedReader '[a] r b
-    buildLambdaType con returnType restType = do
-        let constructorTypeNames = snd <$> snd (getNameAndBangTypesFromCon con)
-            packedContentType =
-                foldr
-                    ( \(i, x) xs ->
-                        if (InsertFieldSize `elem` flags) && (SkipLastFieldSize `notElem` flags || (SkipLastFieldSize `elem` flags && i /= 1))
-                            then [t|'[FieldSize, $(return x)] :++: $xs|]
-                            else [t|$(return x) ': $xs|]
-                    )
-                    [t|'[]|]
-                    $ zip (reverse [0 .. length constructorTypeNames]) constructorTypeNames
-        [t|PackedReader ($packedContentType) $restType $returnType|]
+    buildLambdaType :: [Type] -> Q Type -> Q Type -> Q Type
+    buildLambdaType branchType returnType restType = do
+        let branchTypeList = foldr (\a rest -> [t|$(return a) ': $rest|]) [t|'[]|] branchType
+        [t|PackedReader $branchTypeList $restType $returnType|]
