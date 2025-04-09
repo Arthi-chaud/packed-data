@@ -24,39 +24,29 @@ import Language.Haskell.TH
 genConstructorRepackers :: [PackingFlag] -> Name -> Q [Dec]
 genConstructorRepackers flags tyName = do
     (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
-    packers <-
-        mapM
-            ( \con ->
-                let (conName, bt) = getNameAndBangTypesFromCon con
-                 in genConstructorRepacker flags conName (snd <$> bt)
-            )
-            cs
+    packers <- genConstructorRepacker flags `mapM` cs
     return $ concat packers
 
 repackConFName :: Name -> Name
 repackConFName conName = mkName $ "repack" ++ sanitizeConName conName
 
-genConstructorRepacker :: [PackingFlag] -> Name -> [Type] -> Q [Dec]
-genConstructorRepacker flags conName argTypes = do
-    let argCount = length argTypes
-        needsFieldSize i =
-            (InsertFieldSize `elem` flags)
-                && ( (SkipLastFieldSize `notElem` flags)
-                        || i < argCount - 1
-                   )
-    varNames <- mapM (\_ -> newName "t") argTypes
+genConstructorRepacker :: [PackingFlag] -> Con -> Q [Dec]
+genConstructorRepacker flags con = do
+    let conName = fst $ getNameAndBangTypesFromCon con
+        fieldTypes = getConFieldsIdxAndNeedsFS con flags
+    varNames <- mapM (\_ -> newName "t") fieldTypes
     writeExp <-
         let concated =
                 foldl
-                    ( \rest (i, p) ->
-                        if needsFieldSize i
-                            then [|($rest) N.>> applyNeedsWithFieldSize $(varE p)|]
-                            else [|($rest) N.>> applyNeeds $(varE p)|]
+                    ( \rest ((_, _, needsFieldSize), varName) ->
+                        if needsFieldSize
+                            then [|($rest) N.>> applyNeedsWithFieldSize $(varE varName)|]
+                            else [|($rest) N.>> applyNeeds $(varE varName)|]
                     )
                     [|$(varE $ startFName conName)|]
-                    (zip [0 ..] varNames)
+                    (zip fieldTypes varNames)
          in [|withEmptyNeeds $concated|]
-    signature <- genConstructorPackerSig flags conName argTypes
+    signature <- genConstructorPackerSig flags conName ((\(t, _, _) -> t) <$> fieldTypes)
     return
         [ signature
         , FunD (repackConFName conName) [Clause (VarP <$> varNames) (NormalB writeExp) []]
