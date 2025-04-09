@@ -11,6 +11,6 @@ import Data.Packed.TH
 import Data.Packed.Unpackable
 import Prelude hiding (readList)
 
-$(mkPacked ''[] [])
 $(mkPacked ''Maybe [])
+$(mkPacked ''[] [])
 $(mkPacked ''Either [])

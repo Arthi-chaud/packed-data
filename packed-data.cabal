@@ -34,6 +34,7 @@ library
   exposed-modules:
       Data.Packed
       Data.Packed.Reader
+      Data.Packed.Packed
       Data.Packed.Needs
       Data.Packed.Instances
       Data.Packed.TH
@@ -43,7 +44,6 @@ library
       Data.Packed.Case
       Data.Packed.FieldSize
       Data.Packed.Packable
-      Data.Packed.Packed
       Data.Packed.TH.Case
       Data.Packed.TH.Flag
       Data.Packed.TH.Packable
@@ -75,6 +75,9 @@ library
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
+      TypeFamilies
+      FlexibleInstances
+      MultiParamTypeClasses
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
@@ -109,6 +112,9 @@ executable examples
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
+      TypeFamilies
+      FlexibleInstances
+      MultiParamTypeClasses
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N -Wno-unused-top-binds
   build-depends:
       base >=4.7 && <5
@@ -139,6 +145,9 @@ test-suite packed-test
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
+      TypeFamilies
+      FlexibleInstances
+      MultiParamTypeClasses
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N -Wno-unused-top-binds -Wno-orphans -Wno-redundant-constraints
   build-depends:
       base >=4.7 && <5
@@ -167,6 +176,9 @@ benchmark ast-bench
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
+      TypeFamilies
+      FlexibleInstances
+      MultiParamTypeClasses
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-T -O2 -Wno-unused-top-binds -Wno-orphans -Wno-redundant-constraints
   build-depends:
       base >=4.7 && <5
@@ -195,6 +207,9 @@ benchmark bigjson-bench
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
+      TypeFamilies
+      FlexibleInstances
+      MultiParamTypeClasses
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-T -O2 -Wno-unused-top-binds -Wno-orphans -Wno-redundant-constraints
   build-depends:
       aeson
@@ -228,6 +243,9 @@ benchmark report
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
+      TypeFamilies
+      FlexibleInstances
+      MultiParamTypeClasses
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-T -O2 -Wno-unused-top-binds -Wno-orphans -Wno-redundant-constraints
   build-depends:
       base >=4.7 && <5
@@ -267,6 +285,9 @@ benchmark tree-bench
       TemplateHaskellQuotes
       TupleSections
       QualifiedDo
+      TypeFamilies
+      FlexibleInstances
+      MultiParamTypeClasses
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-T -O2 -Wno-unused-top-binds -Wno-orphans -Wno-redundant-constraints
   cc-options: -O2
   include-dirs:

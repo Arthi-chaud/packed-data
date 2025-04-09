@@ -1,10 +1,10 @@
 module Data.Packed.TH.Skip (genSkip, skipFName) where
 
+import Data.Packed.Case (case_)
 import Data.Packed.FieldSize (skipWithFieldSize)
 import Data.Packed.Reader (PackedReader)
 import qualified Data.Packed.Reader as R
 import Data.Packed.Skippable (Skippable (skip))
-import Data.Packed.TH.Case (caseFName)
 import Data.Packed.TH.Flag (PackingFlag (..))
 import Data.Packed.TH.Utils
 import Language.Haskell.TH
@@ -32,7 +32,7 @@ genSkip flags tyName = do
     funExpr <-
         foldl
             (\rest arg -> [|$rest $(return arg)|])
-            (varE $ caseFName tyName)
+            [|case_|]
             lambdas
     let fun = FunD fName [Clause [] (NormalB funExpr) []]
     signature <- genSkipSignature tyName

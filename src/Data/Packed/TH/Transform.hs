@@ -1,12 +1,12 @@
 module Data.Packed.TH.Transform (transformFName, genTransform) where
 
 import Data.Maybe (catMaybes)
+import Data.Packed.Case (case_)
 import Data.Packed.FieldSize (FieldSize)
 import Data.Packed.Needs (withEmptyNeeds)
 import qualified Data.Packed.Needs as N
 import Data.Packed.Reader (PackedReader)
 import qualified Data.Packed.Reader as R
-import Data.Packed.TH.Case (caseFName)
 import Data.Packed.TH.Flag
 import Data.Packed.TH.Start (startFName)
 import Data.Packed.TH.Utils
@@ -38,7 +38,7 @@ genTransform flags tyName = do
                         then [|$rest (R.return (withEmptyNeeds $(varE (startFNameForCon curr))))|]
                         else [|$rest ($(varE caseName) R.>>= \resWriter -> R.return (withEmptyNeeds ($(varE (startFNameForCon curr)) N.>> resWriter)))|]
             )
-            (varE $ caseFNameForType tyName)
+            [|case_|]
             cs
     return
         [ signature
@@ -52,7 +52,6 @@ genTransform flags tyName = do
     conNameToCaseFunctionName conName = mkName $ "case" ++ (sanitizeConName conName)
 
     startFNameForCon = startFName . fst . getNameAndBangTypesFromCon
-    caseFNameForType = caseFName
     conHasArguments = not . null . snd . getNameAndBangTypesFromCon
 
 -- For a type 'Tree', generates the following signature

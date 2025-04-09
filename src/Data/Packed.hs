@@ -20,15 +20,16 @@ module Data.Packed (
     isolate,
     fromPacked,
     unsafeToPacked,
-    unsafeToPacked',
     unsafeCastPacked,
-    getPtr,
 
     -- * PackedReader
     PackedReader,
     mkPackedReader,
     runReader,
     readerWithFieldSize,
+
+    -- * Case expression,
+    PackedCase (..),
 
     -- * Code generation
     mkPacked,
@@ -40,6 +41,7 @@ module Data.Packed (
     Skippable (..),
 ) where
 
+import Data.Packed.Case
 import Data.Packed.FieldSize
 import Data.Packed.Instances ()
 import Data.Packed.Needs

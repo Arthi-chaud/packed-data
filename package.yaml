@@ -44,6 +44,9 @@ default-extensions:
 - TemplateHaskellQuotes
 - TupleSections
 - QualifiedDo
+- TypeFamilies
+- FlexibleInstances
+- MultiParamTypeClasses
 
 library:
   source-dirs: src
@@ -57,6 +60,7 @@ library:
   exposed-modules:
   - Data.Packed
   - Data.Packed.Reader
+  - Data.Packed.Packed
   - Data.Packed.Needs
   - Data.Packed.Instances
   - Data.Packed.TH

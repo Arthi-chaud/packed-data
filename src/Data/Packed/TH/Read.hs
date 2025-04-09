@@ -2,9 +2,9 @@
 
 module Data.Packed.TH.Read (readFName, genRead) where
 
+import Data.Packed.Case (case_)
 import Data.Packed.Reader hiding (return)
 import qualified Data.Packed.Reader as R
-import Data.Packed.TH.Case (caseFName)
 import Data.Packed.TH.Flag (PackingFlag (..))
 import Data.Packed.TH.Utils
 import Data.Packed.Unpackable
@@ -46,7 +46,7 @@ genRead flags tyName = do
     funExpr <-
         foldl
             (\rest arg -> [|$rest $(return arg)|])
-            (varE $ caseFName tyName)
+            [|case_|]
             lambdas
     let fun = FunD fName [Clause [] (NormalB funExpr) []]
     signature <- genReadSignature tyName resolvedType typeVariables

@@ -11,7 +11,7 @@ module Data.Packed.TH (
     PackingFlag (..),
 
     -- * Generate Case function
-    genCase,
+    genCaseInstance,
 
     -- * Generate Packing function
     genPackableInstance,
@@ -75,7 +75,7 @@ mkPacked ::
     [PackingFlag] ->
     Q [Dec]
 mkPacked tyName flags = do
-    caseFunction <- genCase flags tyName
+    caseInstance <- genCaseInstance flags tyName
     packableInstance <- genPackableInstance flags tyName
     unpackableInstance <- genUnpackableInstance flags tyName
     constructorPackers <- genConstructorPackers flags tyName
@@ -83,7 +83,7 @@ mkPacked tyName flags = do
     skipInstance <- genSkippableInstance flags tyName
     transformFunction <- genTransform flags tyName
     return $
-        caseFunction
+        caseInstance
             ++ packableInstance
             ++ unpackableInstance
             ++ constructorPackers
