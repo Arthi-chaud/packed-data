@@ -68,24 +68,24 @@ evalPacked =
         right <- evalPacked
         R.return (f left right)
 
-evalPackedNonMonadic :: Packed (AST ': r) -> IO Int
+evalPackedNonMonadic :: Packed (AST ': r) -> IO Int32
 evalPackedNonMonadic packed = fst <$> go (unsafeForeignPtrToPtr fptr)
   where
     (BS fptr _) = fromPacked packed
-    go :: Ptr Word8 -> IO (Int, Ptr Word8)
+    go :: Ptr Word8 -> IO (Int32, Ptr Word8)
     go ptr = do
         tag <- peek ptr :: IO Word8
         let !nextPtr = ptr `plusPtr` 1
         case tag of
             0 -> do
                 !n <- peek nextPtr :: IO Int32
-                return (fromIntegral n, plusPtr nextPtr (sizeOf n))
+                return (n, plusPtr nextPtr (sizeOf n))
             1 -> opLambda (+) nextPtr
             2 -> opLambda (-) nextPtr
             3 -> opLambda (*) nextPtr
             _ -> undefined
     {-# INLINE opLambda #-}
-    opLambda :: (Int -> Int -> Int) -> Ptr Int32 -> IO (Int, Ptr Word8)
+    opLambda :: (Int32 -> Int32 -> Int32) -> Ptr Int32 -> IO (Int32, Ptr Word8)
     opLambda f ptr = do
         (!left, !r) <- go $ castPtr ptr
         (!right, !r1) <- go r
