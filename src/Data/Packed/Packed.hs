@@ -1,12 +1,20 @@
-module Data.Packed.Packed (Packed (..), unsafeToPacked, unsafeToPacked', fromPacked, unsafeCastPacked, duplicate) where
+module Data.Packed.Packed (
+    Packed (..),
+    unsafeToPacked,
+    unsafeToPacked',
+    fromPacked,
+    unsafeCastPacked,
+    duplicate,
+    getPtr,
+) where
 
 import Control.DeepSeq
 import Data.ByteString (copy)
 import Data.ByteString.Internal
 import Data.Kind (Type)
-import Foreign (Ptr)
+import Foreign.Ptr
 import GHC.Exts (Ptr (Ptr))
-import GHC.ForeignPtr (ForeignPtr (ForeignPtr), ForeignPtrContents (FinalPtr))
+import GHC.ForeignPtr
 
 -- | A buffer that contains one or more packed (i.e. serialised) values.
 -- The order of the values in the buffer is defined by the 'l' type list
@@ -39,3 +47,6 @@ unsafeCastPacked = unsafeToPacked . fromPacked
 
 unsafeToPacked' :: Ptr a -> Int -> Packed b
 unsafeToPacked' (Ptr addr) l = Packed (BS (ForeignPtr addr FinalPtr) l)
+
+getPtr :: Packed a -> Ptr b
+getPtr p = let BS fptr _ = fromPacked p in castPtr $ unsafeForeignPtrToPtr fptr
