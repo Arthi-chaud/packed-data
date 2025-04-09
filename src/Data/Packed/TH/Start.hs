@@ -1,6 +1,5 @@
 module Data.Packed.TH.Start (startFName, genStart) where
 
-import Data.Packed.FieldSize
 import Data.Packed.Needs
 import Data.Packed.Packable (write)
 import Data.Packed.TH.Flag (PackingFlag (..))
@@ -27,35 +26,22 @@ startFName conName = mkName $ "start" ++ sanitizeConName conName
 -- @
 genStart ::
     [PackingFlag] ->
-    -- | The name of the data constructor to generate the function for
-    Name ->
+    -- | Constructor to generate the function for
+    Con ->
     -- | The 'Tag' (byte) to write for this constructor
     Tag ->
-    -- | The list of 'Type's of the data constructor's arguments
-    [Type] ->
     Q [Dec]
-genStart flags conName tag paramTypeList = do
-    let fName = startFName conName
-        constructorParamTypes = return <$> paramTypeList
+genStart flags con tag = do
+    branchType <- getBranchTyList con flags
+    let (conName, _) = getNameAndBangTypesFromCon con
+        fName = startFName conName
     (DataConI _ conType _) <- reify conName
     sig <-
         let r = varT $ mkName "r"
             t = varT $ mkName "t"
-            insertFieldSizes = InsertFieldSize `elem` flags
-            skipLastFieldSize = SkipLastFieldSize `elem` flags
-            -- From the list of the constructor's parameters, generate the correct type for 'Data.Packed.Needs'
-            -- For Leaf a, we will obtain Needs (a ': r)
-            -- For node, if size flag is enabled, we will get Needs (FieldSize ': Tree a ': FieldSize ': Tree a ': r)
-            destNeedsTypeParams =
-                foldr
-                    ( \(i, x) xs ->
-                        if insertFieldSizes && (not skipLastFieldSize || (skipLastFieldSize && i /= 1))
-                            then [t|FieldSize ': $x ': $xs|]
-                            else [t|$x ': $xs|]
-                    )
-                    r
-                    $ zip (reverse [0 .. length constructorParamTypes]) constructorParamTypes
-         in [t|NeedsBuilder ($(return $ getParentTypeFromConstructorType conType) ': $r) $t $destNeedsTypeParams $t|]
+            destNeedsTypeParams = foldr (\field rest -> [t|$(return field) ': $rest|]) r branchType
+            parentType = getParentTypeFromConstructorType conType
+         in [t|NeedsBuilder ($(return parentType) ': $r) $t $destNeedsTypeParams $t|]
     expr <- [|mkNeedsBuilder (\n -> runBuilder (write (tag :: Word8)) (unsafeCastNeeds n))|]
     return
         [ SigD fName sig

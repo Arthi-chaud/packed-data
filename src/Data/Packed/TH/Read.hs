@@ -2,8 +2,6 @@
 
 module Data.Packed.TH.Read (readFName, genRead) where
 
-import Control.Monad
-import Control.Monad.State
 import Data.Packed.Reader hiding (return)
 import qualified Data.Packed.Reader as R
 import Data.Packed.TH.Case (caseFName)
@@ -63,36 +61,27 @@ genReadLambdas flags tyName = do
 -- generates a single lambda to use with caseTree for our unpack method
 genReadLambda :: [PackingFlag] -> Con -> Q Exp
 genReadLambda flags con = do
-    tyList <- getBranchTyList con flags
     let appliedConstructor =
             foldl
                 (\rest arg -> AppE rest $ VarE arg)
                 (ConE conName)
                 $ (\i -> mkName $ "arg" ++ show i)
                     <$> [0 .. (length conParamTypes - 1)]
-    buildBindingExpression appliedConstructor $ branchTyWithFieldIndex tyList
+    buildBindingExpression appliedConstructor
   where
     (conName, conParamTypes) = getNameAndBangTypesFromCon con
-    buildBindingExpression :: Exp -> [(Int, Type)] -> Q Exp
+    buildBindingExpression :: Exp -> Q Exp
     buildBindingExpression appliedConstructor =
         foldr
-            ( \(idx, field) ret ->
-                if typeIsFieldSize field
-                    then [|skip R.>> $ret|]
-                    else [|reader R.>>= \($(varP $ mkName $ "arg" ++ show idx)) -> $ret|]
+            ( \(_, idx, needsFS) ret ->
+                let skipExpr = [|skip R.>> $readerExpr|]
+                    readerExpr = [|reader R.>>= \($(varP $ mkName $ "arg" ++ show idx)) -> $ret|]
+                 in if needsFS
+                        then skipExpr
+                        else readerExpr
             )
             [|R.return ($(parensE (return appliedConstructor)))|]
-    branchTyWithFieldIndex tyList =
-        evalState
-            ( forM tyList $ \ty ->
-                if typeIsFieldSize ty
-                    then return (-1, ty)
-                    else do
-                        idx <- get
-                        modify (+ 1)
-                        return (idx, ty)
-            )
-            (0 :: Int)
+            (getConFieldsIdxAndNeedsFS con flags)
 
 -- genReadLambda flags conName conParameterTypes = do
 

@@ -31,44 +31,38 @@ conWriteFName conName = mkName $ "writeCon" ++ sanitizeConName conName
 genConWrite ::
     [PackingFlag] ->
     -- | The name of the data constructor to generate the function for
-    Name ->
+    Con ->
     -- | A unique (to the data type) 'Tag' to identify the packed data constructor.
     --
     -- For example, for a 'Tree' data type,
     -- we would typically use '0' for the 'Leaf' constructor and '1' for the 'Node' constructor
     Tag ->
-    [BangType] ->
     Q [Dec]
-genConWrite flags conName conIndex bangTypes = do
-    (DataConI _ conType _) <- reify conName
-    let r = VarT $ mkName "r"
+genConWrite flags con tag = do
+    let (conName, _) = getNameAndBangTypesFromCon con
+        r = VarT $ mkName "r"
         t = VarT $ mkName "t"
         fName = conWriteFName conName
-        paramTypeList = snd <$> bangTypes
-        parentType = getParentTypeFromConstructorType conType
-    signature <- genConWriteSignature conName paramTypeList parentType r t
+        paramTypes = getConFieldsIdxAndNeedsFS con flags
+    parentType <- do
+        DataConI _ conTy _ <- reify conName
+        return $ getParentTypeFromConstructorType conTy
+    signature <- genConWriteSignature conName ((\(ty, _, _) -> ty) <$> paramTypes) parentType r t
     -- for each parameter type, we create a name
-    varNameAndType <- mapM (\ty -> (,ty) <$> newName "t") paramTypeList
-    -- we either call `encode` for every type parameter, and fold
+    fieldTypeAndName <- mapM (\ty -> (ty,) <$> newName "t") paramTypes
     body <-
         foldl
-            ( \rest (paramName, needsSizeTag) ->
+            ( \rest ((_, _, needsFS), paramName) ->
                 -- We insert the size before
-                if needsSizeTag
+                if needsFS
                     then [|$rest N.>> writeWithFieldSize $(varE paramName)|]
                     else [|$rest N.>> write $(varE paramName)|]
             )
             [|$(varE $ startFName conName)|]
-            ( if InsertFieldSize `elem` flags
-                then case reverse varNameAndType of
-                    -- Here, 'a' is the last field. We insert a FieldSize iff SkipLastFieldSize is not set
-                    (a : b) -> reverse $ (fst a, SkipLastFieldSize `notElem` flags) : ((,True) . fst <$> b)
-                    x -> reverse $ (,True) . fst <$> x
-                else (,False) . fst <$> varNameAndType
-            )
+            fieldTypeAndName
     -- The pattern (lhs of '=' in a function implementation) will be something like '\a needs' for constructor 'Leaf a'
-    let patt = VarP . fst <$> varNameAndType
-    start <- genStart flags conName conIndex (snd <$> bangTypes)
+    let patt = VarP . snd <$> fieldTypeAndName
+    start <- genStart flags con tag
     return $
         start
             ++ [ signature
