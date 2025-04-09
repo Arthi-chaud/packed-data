@@ -2,7 +2,7 @@ module Data.Packed.TH.Transform (transformFName, genTransform) where
 
 import Data.Maybe (catMaybes)
 import Data.Packed.FieldSize (FieldSize)
-import Data.Packed.Needs (withEmptyNeeds, (:++:))
+import Data.Packed.Needs (withEmptyNeeds)
 import qualified Data.Packed.Needs as N
 import Data.Packed.Reader (PackedReader)
 import qualified Data.Packed.Reader as R
@@ -80,21 +80,24 @@ genTransformSignature flags tyName = do
     return $ SigD (transformFName tyName) signature
   where
     -- From a constructor (say Leaf a), build type PackedTransformer a r
-    buildLambdaType con ty restType = case snd <$> snd (getNameAndBangTypesFromCon con) of
-        [] -> Nothing
-        constructorTypeNames -> return $ do
-            packedContentType <-
-                foldr
-                    ( \(i, x) xs ->
-                        if (InsertFieldSize `elem` flags) && (SkipLastFieldSize `notElem` flags || (SkipLastFieldSize `elem` flags && i /= 1))
-                            then [t|'[FieldSize, $(return x)] :++: $xs|]
-                            else [t|$(return x) ': $xs|]
-                    )
-                    [t|'[]|]
-                    $ zip (reverse [0 .. length constructorTypeNames]) constructorTypeNames
-            [t|
-                PackedReader
-                    $(return packedContentType)
-                    $restType
-                    (N.NeedsBuilder $(return packedContentType) '[$(return ty)] '[] '[$(return ty)])
-                |]
+    buildLambdaType con ty restType =
+        if null fieldType
+            then Nothing
+            else return $ do
+                packedContentType <-
+                    foldr
+                        ( \(fieldTy, _, needsFS) tys ->
+                            if needsFS
+                                then [t|FieldSize ': $(return fieldTy) ': $tys|]
+                                else [t|$(return fieldTy) ': $tys|]
+                        )
+                        [t|'[]|]
+                        fieldType
+                [t|
+                    PackedReader
+                        $(return packedContentType)
+                        $restType
+                        (N.NeedsBuilder $(return packedContentType) '[$(return ty)] '[] '[$(return ty)])
+                    |]
+      where
+        fieldType = getConFieldsIdxAndNeedsFS con flags

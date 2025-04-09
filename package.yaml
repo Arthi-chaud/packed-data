@@ -60,6 +60,7 @@ library:
   - Data.Packed.Needs
   - Data.Packed.Instances
   - Data.Packed.TH
+  - Data.Packed.TH.Utils
   - Data.Packed.Skippable
 
 executables:

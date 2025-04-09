@@ -37,6 +37,7 @@ library
       Data.Packed.Needs
       Data.Packed.Instances
       Data.Packed.TH
+      Data.Packed.TH.Utils
       Data.Packed.Skippable
   other-modules:
       Data.Packed.FieldSize
@@ -53,7 +54,6 @@ library
       Data.Packed.TH.Start
       Data.Packed.TH.Transform
       Data.Packed.TH.Unpackable
-      Data.Packed.TH.Utils
       Data.Packed.TH.Write
       Data.Packed.TH.WriteCon
       Data.Packed.Unpackable
