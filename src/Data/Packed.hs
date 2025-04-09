@@ -22,6 +22,7 @@ module Data.Packed (
     unsafeToPacked,
     unsafeToPacked',
     unsafeCastPacked,
+    getPtr,
 
     -- * PackedReader
     PackedReader,
