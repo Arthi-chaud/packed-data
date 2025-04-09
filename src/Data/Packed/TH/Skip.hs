@@ -1,6 +1,6 @@
 module Data.Packed.TH.Skip (genSkip, skipFName) where
 
-import Data.Packed.FieldSize (FieldSize, skipWithFieldSize)
+import Data.Packed.FieldSize (skipWithFieldSize)
 import Data.Packed.Reader (PackedReader)
 import qualified Data.Packed.Reader as R
 import Data.Packed.Skippable (Skippable (skip))
@@ -51,7 +51,7 @@ genSkipLambda types = go types [|R.return ()|]
     go [] end = end
     go [_] end = [|skip R.>> $end|]
     go (t1 : t2 : ts) end =
-        if t1 == ConT ''FieldSize
+        if typeIsFieldSize t1
             then [|skipWithFieldSize R.>> $(go ts end)|]
             else [|skip R.>> $(go (t2 : ts) end)|]
 

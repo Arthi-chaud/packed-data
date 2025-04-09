@@ -2,6 +2,8 @@
 
 module Data.Packed.TH.Read (readFName, genRead) where
 
+import Control.Monad
+import Control.Monad.State
 import Data.Packed.Reader hiding (return)
 import qualified Data.Packed.Reader as R
 import Data.Packed.TH.Case (caseFName)
@@ -56,39 +58,43 @@ genRead flags tyName = do
 genReadLambdas :: [PackingFlag] -> Name -> Q [Exp]
 genReadLambdas flags tyName = do
     (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
-    mapM
-        ( \con ->
-            let (conName, bt) = getNameAndBangTypesFromCon con
-             in genReadLambda flags conName (snd <$> bt)
-        )
-        cs
+    genReadLambda flags `mapM` cs
 
 -- generates a single lambda to use with caseTree for our unpack method
-genReadLambda :: [PackingFlag] -> Name -> [Type] -> Q Exp
-genReadLambda flags conName conParameterTypes = do
+genReadLambda :: [PackingFlag] -> Con -> Q Exp
+genReadLambda flags con = do
+    tyList <- getBranchTyList con flags
     let appliedConstructor =
             foldl
                 (\rest arg -> AppE rest $ VarE arg)
                 (ConE conName)
                 $ (\i -> mkName $ "arg" ++ show i)
-                    <$> [0 .. (length conParameterTypes - 1)]
-    buildBindingExpression appliedConstructor
+                    <$> [0 .. (length conParamTypes - 1)]
+    buildBindingExpression appliedConstructor $ branchTyWithFieldIndex tyList
   where
-    hasSizeFlag = InsertFieldSize `elem` flags
-    skipLastFieldSizeFlag = SkipLastFieldSize `elem` flags
-    buildBindingExpression :: Exp -> Q Exp
+    (conName, conParamTypes) = getNameAndBangTypesFromCon con
+    buildBindingExpression :: Exp -> [(Int, Type)] -> Q Exp
     buildBindingExpression appliedConstructor =
         foldr
-            ( \(argIndex, hasSize) ret ->
-                let
-                    skipAndUnpack = [|skip R.>> $unpackExpr|]
-                    unpackExpr = [|reader R.>>= \($(varP $ mkName $ "arg" ++ show argIndex)) -> $ret|]
-                 in
-                    if hasSize then skipAndUnpack else unpackExpr
+            ( \(idx, field) ret ->
+                if typeIsFieldSize field
+                    then [|skip R.>> $ret|]
+                    else [|reader R.>>= \($(varP $ mkName $ "arg" ++ show idx)) -> $ret|]
             )
             [|R.return ($(parensE (return appliedConstructor)))|]
-            $ (\i -> (i, hasSizeFlag && (not skipLastFieldSizeFlag || (skipLastFieldSizeFlag && i /= length conParameterTypes - 1))))
-                <$> [0 .. (length conParameterTypes - 1)]
+    branchTyWithFieldIndex tyList =
+        evalState
+            ( forM tyList $ \ty ->
+                if typeIsFieldSize ty
+                    then return (-1, ty)
+                    else do
+                        idx <- get
+                        modify (+ 1)
+                        return (idx, ty)
+            )
+            (0 :: Int)
+
+-- genReadLambda flags conName conParameterTypes = do
 
 -- For a type 'Tree', generates the following function signature
 -- readTree :: ('Unpackable' a) => 'Data.Packed.PackedReader' '[Tree a] r (Tree a)
