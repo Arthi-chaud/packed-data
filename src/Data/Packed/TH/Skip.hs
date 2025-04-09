@@ -1,6 +1,6 @@
 module Data.Packed.TH.Skip (genSkip, skipFName) where
 
-import Data.Packed.FieldSize (skipWithFieldSize)
+import Data.Packed.FieldSize (FieldSize, skipWithFieldSize)
 import Data.Packed.Reader (PackedReader)
 import qualified Data.Packed.Reader as R
 import Data.Packed.Skippable (Skippable (skip))
@@ -41,31 +41,19 @@ genSkip flags tyName = do
 -- Generates all the lambda functions we will need, to skip using caseTree
 genSkipLambdas :: [PackingFlag] -> Name -> Q [Exp]
 genSkipLambdas flags tyName = do
-    (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
-    mapM
-        ( \con ->
-            let (_, bt) = getNameAndBangTypesFromCon con
-             in genSkipLambda flags (snd <$> bt)
-        )
-        cs
+    branchTypes <- getBranchesTyList tyName flags
+    genSkipLambda `mapM` branchTypes
 
 -- generates a single lambda to use with caseTree for our skip method
-genSkipLambda :: [PackingFlag] -> [Type] -> Q Exp
-genSkipLambda flags conParameterTypes =
-    foldr
-        ( \hasSize ret ->
-            let
-                skipFSAndSkipField = [|skipWithFieldSize R.>> $ret|]
-                skipField = [|skip R.>> $ret|]
-             in
-                if hasSize then skipFSAndSkipField else skipField
-        )
-        [|R.return ()|]
-        $ (\i -> hasSizeFlag && (not skipLastFieldSizeFlag || (skipLastFieldSizeFlag && i /= length conParameterTypes - 1)))
-            <$> [0 .. (length conParameterTypes - 1)]
+genSkipLambda :: [Type] -> Q Exp
+genSkipLambda types = go types [|R.return ()|]
   where
-    hasSizeFlag = InsertFieldSize `elem` flags
-    skipLastFieldSizeFlag = SkipLastFieldSize `elem` flags
+    go [] end = end
+    go [_] end = [|skip R.>> $end|]
+    go (t1 : t2 : ts) end =
+        if t1 == ConT ''FieldSize
+            then [|skipWithFieldSize R.>> $(go ts end)|]
+            else [|skip R.>> $(go (t2 : ts) end)|]
 
 -- Generates the following function signature for a data type 'Tree'
 -- skipTree :: ('Data.Packed.Skippable' a) => 'Data.Packed.PackedReader' '[Tree a] r ()
