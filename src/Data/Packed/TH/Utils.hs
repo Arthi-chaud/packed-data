@@ -4,9 +4,14 @@ module Data.Packed.TH.Utils (
     resolveAppliedType,
     getNameAndBangTypesFromCon,
     sanitizeConName,
+    getBranchesTyList,
 ) where
 
+import Control.Monad
 import Data.Char
+import Data.Functor
+import Data.Packed.FieldSize (FieldSize)
+import Data.Packed.TH.Flag
 import Data.Word (Word8)
 import Language.Haskell.TH
 
@@ -49,3 +54,28 @@ sanitizeConName :: Name -> String
 sanitizeConName conName = strName $ nameBase conName
   where
     strName s = (\c -> if isAlphaNum c then [c] else show $ ord c) =<< s
+
+-- | for a given type, and the packing flags, gives back the list of types for each branch
+--
+-- @
+--  getBranchesTyList ''Tree ['InsertFieldSize']
+--
+--  > [[FieldSize, Int], [FieldSize, Tree a, FieldSize, Tree a]]
+-- @
+getBranchesTyList :: Name -> [PackingFlag] -> Q [[Type]]
+getBranchesTyList tyName flags = do
+    (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
+    getBranchType `mapM` cs
+  where
+    getBranchType :: Con -> Q [Type]
+    getBranchType con = do
+        fields <- forM consValueTypesWithIndex $ \(valIdx, valTy) ->
+            if (InsertFieldSize `elem` flags)
+                && (SkipLastFieldSize `notElem` flags || (SkipLastFieldSize `elem` flags && valIdx /= consValueCount - 1))
+                then [t|FieldSize|] <&> (: [valTy])
+                else return [valTy]
+        return $ concat fields
+      where
+        consValueTypes = snd <$> snd (getNameAndBangTypesFromCon con)
+        consValueCount = length consValueTypes
+        consValueTypesWithIndex = zip [0 .. length consValueTypes] consValueTypes
