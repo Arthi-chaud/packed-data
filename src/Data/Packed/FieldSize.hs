@@ -1,4 +1,6 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 module Data.Packed.FieldSize (
     FieldSize (..),
@@ -30,7 +32,9 @@ import Prelude hiding (read)
 -- The size is in bytes.
 --
 -- __Note__: Take a look at the 'Data.Packed.TH.PackingFlag's to understand how to use it
-newtype FieldSize = FieldSize Int32
+newtype FieldSize = FieldSize Int32 deriving (Num, Enum, Real, Ord, Eq)
+
+deriving instance Integral FieldSize
 
 instance {-# OVERLAPPING #-} Packable FieldSize where
     write (FieldSize value) = mkNeedsBuilder unsafeCastNeeds N.>> write value
