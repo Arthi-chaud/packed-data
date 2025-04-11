@@ -35,7 +35,7 @@ module Data.Packed (
     PackingFlag (..),
 
     -- * Utils
-    FieldSize,
+    FieldSize (..),
     getFieldSizeFromPacked,
     Skippable (..),
 ) where
