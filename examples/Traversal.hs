@@ -28,7 +28,9 @@ sumPacked =
             R.return res
         )
 
-runSum :: IO Int
-runSum = do
-    (res, _) <- runReader sumPacked packedTree
-    return res
+runSum :: Int
+runSum =
+    let
+        (res, _) = runReader sumPacked packedTree
+     in
+        res

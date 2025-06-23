@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -39,8 +39,9 @@ library
       Data.Packed.TH
       Data.Packed.TH.Utils
       Data.Packed.Skippable
-  other-modules:
       Data.Packed.FieldSize
+  other-modules:
+      Data.Packed.Internal
       Data.Packed.Packable
       Data.Packed.Packed
       Data.Packed.TH.Case

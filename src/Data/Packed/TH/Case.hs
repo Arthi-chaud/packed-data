@@ -22,10 +22,10 @@ caseFName tyName = mkName $ "case" ++ sanitizeConName tyName
 --     ('Data.Packed.PackedReader' '[Tree a, Tree a] r b) ->
 --     'Data.Packed.PackedReader' '[Tree a] r b
 -- caseTree leafCase nodeCase = 'Data.Packed.Reader.mkPackedReader' $ \packed l -> do
---    (tag :: 'Tag', packed1, l1) <- 'Data.Packed.Unpackable.runReader' 'Data.Packed.reader' packed l
+--    (tag :: 'Tag', packed1, l1) <- 'Data.Packed.Unpackable.runPackedReader' 'Data.Packed.reader' packed l
 --    case tag of
---        0 -> 'Data.Packed.Reader.runReader' leafCase packed1 l1
---        1 -> 'Data.Packed.Reader.runReader' nodeCase packed1 l1
+--        0 -> 'Data.Packed.Reader.runPackedReader' leafCase packed1 l1
+--        1 -> 'Data.Packed.Reader.runPackedReader' nodeCase packed1 l1
 --        _ -> fail "Bad Tag"
 -- @
 genCase ::
@@ -56,9 +56,11 @@ genCase flags tyName = do
          in do
                 caseExpression <- buildCaseExpression flagVarName casePatterns bytes1VarName length1VarName
                 [|
-                    mkPackedReader $ \($(varP packedName)) l' -> do
-                        ($(varP flagVarName), $(varP bytes1VarName), $(varP length1VarName)) <- runPackedReader reader $(varE packedName) l'
-                        $(return caseExpression)
+                    mkPackedReader $ \($(varP packedName)) l' ->
+                        let
+                            ($(varP flagVarName), $(varP bytes1VarName), $(varP length1VarName)) = runPackedReader reader $(varE packedName) l'
+                         in
+                            $(return caseExpression)
                     |]
     -- for dataconstructor Leaf, will be 'leafCase'
     buildCaseFunctionName = conNameToCaseFunctionName . fst . getNameAndBangTypesFromCon
@@ -75,7 +77,7 @@ genCase flags tyName = do
                 )
                     <$> zip [0 ..] casePatterns
             fallbackMatch = do
-                fallbackBody <- [|Prelude.fail "Bad Tag"|]
+                fallbackBody <- [|error "Bad Tag"|]
                 return $ Match WildP (NormalB fallbackBody) []
          in caseE [|$(varE e) :: Tag|] $ matches ++ [fallbackMatch]
 

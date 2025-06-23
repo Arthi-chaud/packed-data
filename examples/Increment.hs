@@ -9,10 +9,12 @@ import Tree
 
 $(mkPacked ''Tree [])
 
-incrementRunner :: Packed '[Tree Int] -> IO (Packed '[Tree Int])
-incrementRunner p = do
-    (incremented, _) <- runReader incrementPacked p
-    return $ finish incremented
+incrementRunner :: Packed '[Tree Int] -> Packed '[Tree Int]
+incrementRunner p =
+    let
+        (incremented, _) = runReader incrementPacked p
+     in
+        finish incremented
 
 -- The workhouse of the incrementation
 incrementPacked :: PackedReader '[Tree Int] r (Needs '[] '[Tree Int])

@@ -40,9 +40,11 @@ instance {-# OVERLAPPING #-} Packable FieldSize where
     write (FieldSize value) = mkNeedsBuilder unsafeCastNeeds N.>> write value
 
 instance {-# OVERLAPPING #-} Unpackable FieldSize where
-    reader = mkPackedReader $ \packed l -> do
-        (fieldSize, rest, l1) <- runPackedReader reader packed l
-        return (FieldSize fieldSize, rest, l1)
+    reader = mkPackedReader $ \packed l ->
+        let
+            (fieldSize, rest, l1) = runPackedReader reader packed l
+         in
+            (FieldSize fieldSize, rest, l1)
 
 instance {-# OVERLAPPING #-} Skippable FieldSize where
     skip = unsafeSkipN (sizeOf (1 :: Int32))
@@ -59,10 +61,12 @@ getFieldSizeFromPacked packed = FieldSize (fromIntegral $ BS.length (fromPacked 
 
 -- | Allows skipping over a field without having to unpack it
 skipWithFieldSize :: PackedReader '[FieldSize, a] r ()
-skipWithFieldSize = mkPackedReader $ \packed l -> do
-    (FieldSize s, packed1, l1) <- runPackedReader reader packed l
-    let size64 = fromIntegral s
-    return ((), packed1 `plusPtr` size64, l1 - size64)
+skipWithFieldSize = mkPackedReader $ \packed l ->
+    let
+        (FieldSize s, packed1, l1) = runPackedReader reader packed l
+        size64 = fromIntegral s
+     in
+        ((), packed1 `plusPtr` size64, l1 - size64)
 
 {-# INLINE writeWithFieldSize #-}
 
@@ -90,7 +94,9 @@ readerWithFieldSize = skip R.>> reader
 
 -- | Splits the 'Packed' value, and isolate the first encoded value.
 isolate :: PackedReader '[FieldSize, a] r (Packed '[a])
-isolate = mkPackedReader $ \packed l -> do
-    (FieldSize s, packed1, l1) <- runPackedReader reader packed l
-    let sizeInt = fromIntegral s
-    return (unsafeToPacked' packed1 sizeInt, packed1 `plusPtr` sizeInt, l1 - sizeInt)
+isolate = mkPackedReader $ \packed l ->
+    let
+        (FieldSize s, packed1, l1) = runPackedReader reader packed l
+        sizeInt = fromIntegral s
+     in
+        (unsafeToPacked' packed1 sizeInt, packed1 `plusPtr` sizeInt, l1 - sizeInt)

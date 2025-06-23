@@ -37,7 +37,7 @@ buildAndEvaluateASTWithDepth n =
         (depthGroupName n)
         [ envWithCleanup (c_build_ast $ fromIntegral n) c_free_ast $ bench cTestName . nfAppIO c_eval
         , bench nativeTestName $ nf eval nativeAST
-        , bench packedTestName $ nfAppIO (runReader evalPacked) packedAST
+        , bench packedTestName $ nf (runReader evalPacked) packedAST
         , bench packedWithUnpackTestName $ whnf (eval . fst . unpack) packedAST
         , bench nonMonadicPackedTestName $ nfAppIO evalPackedNonMonadic packedAST
         ]

@@ -39,9 +39,9 @@ computeTreeSumWithDepth n =
         (depthGroupName n)
         [ envWithCleanup (c_build_tree (fromIntegral n)) c_free_tree $ bench cTestName . nfAppIO c_sum
         , bench nativeTestName $ nf sum nativeTree
-        , bench packedTestName $ whnfAppIO (R.runReader sumPacked) packedTree
+        , bench packedTestName $ whnf (R.runReader sumPacked) packedTree
         , bench packedWithUnpackTestName $ whnf (sum . fst . unpack) packedTree
-        , bench packedWithFieldSizeTestName $ whnfAppIO (R.runReader sumPacked2) packedTree2
+        , bench packedWithFieldSizeTestName $ whnf (R.runReader sumPacked2) packedTree2
         , bench nonMonadicPackedTestName $ nfAppIO sumPackedNonMonadic packedTree
         , bench nonMonadicPackedWithSizeTestName $ nfAppIO sumPackedNonMonadic2 packedTree2
         ]
