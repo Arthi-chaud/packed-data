@@ -8,8 +8,8 @@ $(mkPacked ''Tree [])
 myTree :: Tree Int
 myTree = Node (Leaf 1) (Leaf 2)
 
-packedTree :: Packed '[Tree Int]
+packedTree :: IO (Packed '[Tree Int])
 packedTree = pack myTree
 
-unpackedTree :: Tree Int
-unpackedTree = fst $ unpack packedTree
+unpackedTree :: IO (Tree Int)
+unpackedTree = fst . unpack <$> packedTree

@@ -26,7 +26,7 @@ conWriteFName conName = mkName $ "writeCon" ++ sanitizeConName conName
 --
 -- @
 -- writeConLeaf :: ('Packable' a) => a -> 'NeedsWriter (Tree a) r t'
--- writeConLeaf n  = startLeaf 'Data.Packed.Needs.>>' 'write' n
+-- writeConLeaf leafValue needs = startLeaf needs 'Data.Packed.Needs.>>=' 'write' n
 -- @
 genConWrite ::
     [PackingFlag] ->
@@ -44,6 +44,7 @@ genConWrite flags con tag = do
         t = VarT $ mkName "t"
         fName = conWriteFName conName
         paramTypes = getConFieldsIdxAndNeedsFS con flags
+        srcNeedsName = mkName "needs"
     parentType <- do
         DataConI _ conTy _ <- reify conName
         return $ getParentTypeFromConstructorType conTy
@@ -55,18 +56,18 @@ genConWrite flags con tag = do
             ( \rest ((_, _, needsFS), paramName) ->
                 -- We insert the size before
                 if needsFS
-                    then [|$rest N.>> writeWithFieldSize $(varE paramName)|]
-                    else [|$rest N.>> write $(varE paramName)|]
+                    then [|$rest N.>>= writeWithFieldSize $(varE paramName)|]
+                    else [|$rest N.>>= write $(varE paramName)|]
             )
-            [|$(varE $ startFName conName)|]
+            [|$(varE $ startFName conName) $(varE srcNeedsName)|]
             fieldTypeAndName
     -- The pattern (lhs of '=' in a function implementation) will be something like '\a needs' for constructor 'Leaf a'
-    let patt = VarP . snd <$> fieldTypeAndName
+    let patt = (VarP . snd <$> fieldTypeAndName) ++ [VarP srcNeedsName]
     start <- genStart flags con tag
     return $
         start
             ++ [ signature
-               , FunD fName [Clause [] (NormalB $ LamE patt body) []]
+               , FunD fName [Clause patt (NormalB body) []]
                ]
 
 -- Generates the function signature for functions like 'writeConLeaf'

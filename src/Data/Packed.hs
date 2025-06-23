@@ -9,9 +9,8 @@ module Data.Packed (
 
     -- * Needs
     Needs,
-    withEmptyNeeds,
+    runBuilder,
     writeWithFieldSize,
-    finish,
     unsafeCastNeeds,
 
     -- * Packed

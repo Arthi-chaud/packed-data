@@ -11,7 +11,8 @@ $(mkPacked ''Tree1 [])
 specs :: Spec
 specs = describe "Case on Trees" $ do
     it "should get the sum of the values in the tree" $ do
-        let tree = pack $ buildTree (10 :: Int64)
+        tree <- pack $ buildTree (10 :: Int64)
+        let
             computeSum :: PackedReader '[Tree1 Int64] r Int64
             computeSum =
                 caseTree1

@@ -1,6 +1,10 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LinearTypes #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 module Data.Packed.FieldSize (
     FieldSize (..),
@@ -12,12 +16,9 @@ module Data.Packed.FieldSize (
     applyNeedsWithFieldSize,
 ) where
 
-import ByteString.StrictBuilder (builderLength)
+import qualified Control.Functor.Linear as L
 import Control.Monad
 import qualified Data.ByteString as BS
-import Data.Int (Int32)
-import Data.Packed.Needs
-import qualified Data.Packed.Needs as N
 import Data.Packed.Packable
 import Data.Packed.Packed
 import Data.Packed.Reader hiding (return)
@@ -25,8 +26,15 @@ import qualified Data.Packed.Reader as R
 import Data.Packed.Skippable (Skippable (..), unsafeSkipN)
 import Data.Packed.Unpackable
 import Foreign.Ptr
+import GHC.Exts
+import Data.Packed.Internal
 import Foreign.Storable
 import Prelude hiding (read)
+import Data.Packed.Needs
+import Data.Functor.Identity
+import Unsafe.Linear
+import GHC.Int
+import GHC.IO ( unsafeDupablePerformIO)
 
 -- | Type representation for the size of a packed data.
 -- The size is in bytes.
@@ -37,7 +45,7 @@ newtype FieldSize = FieldSize Int32 deriving (Num, Enum, Real, Ord, Eq)
 deriving instance Integral FieldSize
 
 instance {-# OVERLAPPING #-} Packable FieldSize where
-    write (FieldSize value) = mkNeedsBuilder unsafeCastNeeds N.>> write value
+    write (FieldSize value) needs =  write value (unsafeCastNeeds needs)
 
 instance {-# OVERLAPPING #-} Unpackable FieldSize where
     reader = mkPackedReader $ \packed l -> do
@@ -70,18 +78,42 @@ skipWithFieldSize = mkPackedReader $ \packed l -> do
 --
 -- Note: Universal quantifier is nedded for GHC < 9.10, because of ScopedTypeVariables
 writeWithFieldSize :: forall a r t. (Packable a) => a -> NeedsWriter' '[FieldSize, a] r t
-writeWithFieldSize a = write (FieldSize size) N.>> applyNeeds aNeeds
-  where
-    size = fromIntegral (builderLength aBuilder)
-    aNeeds :: Needs '[] '[a]
-    aNeeds@(Needs aBuilder) = withEmptyNeeds (write a)
+writeWithFieldSize a = withFieldSize (write a)
+
+{-# INLINE withFieldSize #-}
+withFieldSize :: NeedsBuilder (a ': r) t r t -> NeedsBuilder (FieldSize ': a ': r) t r t
+withFieldSize cont needs =
+    let !indirectionSize = sizeOf (0 :: Int32)
+        -- Reallocating the buffer so that the fieldsize can fit
+        !newNeeds = guardRealloc indirectionSize needs
+        -- Get the position of the buffer where the FS will be
+        !(# fieldSizeOffset, newNeeds1 #) = getOffset newNeeds
+        -- Shift the cursor
+        !(Identity writtenNeeds) = cont (unsafeShiftNeedsPtr indirectionSize newNeeds1)
+        -- Get the final position of the cursor
+        !(# finalCursor, writtenNeeds1 #) = getOffset writtenNeeds
+        !(# og, writtenNeeds2 #) = getOrigin writtenNeeds1
+        %1 !() =
+            toLinear3
+                ( \finalCursor' fsPosition og' fsSize ->
+                    let
+                        -- Count the number of bytes that were written
+                        !writtenBytes = intToInt32# (finalCursor' -# (fsPosition +# unInt fsSize))
+                        -- And write it
+                     in
+                        unsafeDupablePerformIO (poke (Ptr (og' `plusAddr#` fsPosition)) (I32# writtenBytes))
+                )
+                finalCursor
+                fieldSizeOffset
+                og
+                indirectionSize
+     in L.return writtenNeeds2
 
 {-# INLINE applyNeedsWithFieldSize #-}
 applyNeedsWithFieldSize :: Needs '[] '[a] -> NeedsWriter' (FieldSize ': a ': '[]) r t
-applyNeedsWithFieldSize n@(Needs builder) = write (FieldSize (fromIntegral (builderLength builder))) N.>> applyNeeds n
+applyNeedsWithFieldSize n = withFieldSize (applyNeeds n)
 
 {-# INLINE readerWithFieldSize #-}
-
 -- | Produces a reader for a value preceded by its 'FieldSize'
 readerWithFieldSize :: (Unpackable a) => PackedReader '[FieldSize, a] r a
 readerWithFieldSize = skip R.>> reader

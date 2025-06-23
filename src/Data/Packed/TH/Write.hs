@@ -40,7 +40,7 @@ genWrite flags tyName = do
                 -- Generate names for each variable in the constructor
                 paramNames <- mapM (const $ newName "t") types
                 -- We apply each parameter of the constructor and the 'Needs' to the 'writeConXXX' function
-                body <- foldl (\f arg -> [|$f $(varE arg)|]) (varE $ conWriteFName conName) paramNames
+                body <- foldl (\f arg -> appE f (varE arg)) (varE $ conWriteFName conName) paramNames
                 return $ Clause [ConP conName [] (VarP <$> paramNames)] (NormalB body) []
             )
             cs

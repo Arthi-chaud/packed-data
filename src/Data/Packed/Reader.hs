@@ -19,11 +19,9 @@ module Data.Packed.Reader (
     fail,
     return,
     ReaderPtr,
-    finishReader,
 ) where
 
 import Data.ByteString.Internal
-import Data.Packed.Needs (Needs, finish)
 import Data.Packed.Packed
 import Data.Packed.Utils ((:++:))
 import Data.Word (Word8)
@@ -148,9 +146,3 @@ runReader (PackedReader f) (Packed (BS fptr l)) = do
     (!v, !ptr1, !l1) <- f (castPtr $ unsafeForeignPtrToPtr fptr) l
     !fptr1 <- newForeignPtr_ ptr1
     Prelude.return (v, Packed (BS fptr1 l1))
-
-{-# INLINE finishReader #-}
-
--- | Util function that calls 'Data.Packed.finish' on the value produced by the input 'PackedReader'
-finishReader :: PackedReader p r (Needs '[] a) -> PackedReader p r (Packed a)
-finishReader r = finish <$> r

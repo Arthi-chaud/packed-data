@@ -30,7 +30,7 @@ buildTreeWithDepth n =
     bgroup
         (depthGroupName n)
         [ bench nativeTestName $ nf buildNativeTree n
-        , bench packedTestName $ nf (\p -> finish (buildPackedTree p)) n
+        , bench packedTestName $ nf (runBuilder . buildPackedTree) n
         ]
 
 buildNativeTree :: Int -> Tree1 Int
@@ -39,8 +39,9 @@ buildNativeTree n = Node1 subTree subTree
   where
     !subTree = buildNativeTree (n - 1)
 
-buildPackedTree :: Int -> Needs '[] '[Tree1 Int]
-buildPackedTree 0 = withEmptyNeeds (writeConLeaf1 (1 :: Int))
-buildPackedTree n = withEmptyNeeds (startNode1 N.>> applyNeeds subTree N.>> applyNeeds subTree)
+buildPackedTree :: Int -> NeedsBuilder (Tree1 Int ': r) '[Tree1 Int] r '[Tree1 Int]
+buildPackedTree 0 = writeConLeaf1 (1 :: Int)
+buildPackedTree n = \needs -> startNode1 needs N.>>= subTree N.>>= subTree
   where
+    subTree :: NeedsBuilder (Tree1 Int ': r1) '[Tree1 Int] r1 '[Tree1 Int]
     !subTree = buildPackedTree (n - 1)

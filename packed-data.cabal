@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -39,8 +39,9 @@ library
       Data.Packed.TH
       Data.Packed.TH.Utils
       Data.Packed.Skippable
-  other-modules:
       Data.Packed.FieldSize
+  other-modules:
+      Data.Packed.Internal
       Data.Packed.Packable
       Data.Packed.Packed
       Data.Packed.TH.Case
@@ -78,9 +79,9 @@ library
   build-depends:
       base >=4.7 && <5
     , bytestring >=0.11.0.0 && <0.13
-    , bytestring-strict-builder >=0.4.5 && <0.5
     , deepseq >=1.4.6.1 && <1.6
     , extra >=1.0 && <2.0
+    , linear-base >=0.4.0 && <0.5.0
     , mtl >=2.2.2 && <2.4
     , template-haskell >=2.18.0.0 && <=2.24.0.0
   default-language: Haskell2010
