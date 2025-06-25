@@ -62,10 +62,10 @@ Documentation is available on [Hackage](https://hackage.haskell.org/package/pack
 To run benchmarks, run the following command:
 
 ```
-stack bench
+stack bench packed-data:bench:tree-bench
 # Saves the report as CSV
-stack bench --ba --csv bench.csv
+stack bench packed-data:bench:tree-bench --ba --csv bench.csv
 # Saves the report, and runs a specific test
-stach bench --ba '--csv bench.csv sums'
+stach bench packed-data:bench:tree-bench --ba '--csv bench.csv sums'
 ```
 
