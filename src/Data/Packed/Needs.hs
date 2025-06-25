@@ -54,6 +54,11 @@ import Prelude hiding ((>>=))
 import Data.Unrestricted.Linear
 import GHC.IO.Unsafe (unsafeDupablePerformIO)
 
+-- | A buffer where packed values can be written
+-- The order to write these values is defined by the 'l' type list
+--
+-- If 'p' is an empty list, then a value of type 't' can be extracted from that buffer.
+-- (See 'finish')
 data Needs (p :: [Type]) (t :: [Type])
     = Needs
         {-# UNPACK #-} !(MutableByteArray# RealWorld)
@@ -82,6 +87,17 @@ unsafeCastNeeds (Needs a b c) = Needs a b c
 
 --- Needs Builder
 
+-- | A wrapper around a function that builds a 'Needs'
+--
+-- 'ps': The type of the expected input of the source 'Needs'
+--
+-- 'ts': The type of the final packed data of the source 'Needs'
+--
+-- 'pd': The type of the expected input of the resuling 'Needs'
+--
+-- 'td': The type of the final packed data of the resulting 'Needs'
+--
+-- __Note:__ It is an indexed monad.
 type NeedsBuilder p1 t1 p2 t2 = Needs p1 t1 %1 -> L.IO (Needs p2 t2)
 
 {-# INLINE (>>=) #-}
@@ -98,10 +114,10 @@ type NeedsBuilder p1 t1 p2 t2 = Needs p1 t1 %1 -> L.IO (Needs p2 t2)
     !x1 <- b x
     L.return x1
 
---- | Shortcut type for 'NeedsBuilder'\'s that simply write a value to a 'Needs' without changing the final packed type
+-- | Shortcut type for 'NeedsBuilder'\'s that simply write a value to a 'Needs' without changing the final packed type
 type NeedsWriter a r t = NeedsBuilder (a ': r) t r t
 
---- | Shortcut type for 'NeedsBuilder'\'s that simply write multiple values to a 'Needs' without changing the final packed type
+-- | Shortcut type for 'NeedsBuilder'\'s that simply write multiple values to a 'Needs' without changing the final packed type
 type NeedsWriter' a r t = NeedsBuilder (a :++: r) t r t
 
 baseBufferSize :: Int
