@@ -49,7 +49,7 @@ genTransform flags tyName = do
   where
     -- for dataconstructor Leaf, will be 'leafCase'
     buildCaseFunctionName = conNameToCaseFunctionName . fst . getNameAndBangTypesFromCon
-    conNameToCaseFunctionName conName = mkName $ "case" ++ (sanitizeConName conName)
+    conNameToCaseFunctionName conName = mkName $ "case_" ++ (sanitizeConName conName)
 
     startFNameForCon = startFName . fst . getNameAndBangTypesFromCon
     caseFNameForType = caseFName
