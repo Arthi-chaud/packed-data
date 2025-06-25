@@ -47,9 +47,12 @@ import Data.Packed.Utils ((:++:))
 import Foreign (Storable (..))
 import GHC.Exts
 import GHC.ForeignPtr
+import GHC.IO (IO (..))
+import qualified System.IO.Linear as L
 import Unsafe.Linear
 import Prelude hiding ((>>=))
-import GHC.IO (unsafeDupablePerformIO)
+import Data.Unrestricted.Linear
+import GHC.IO.Unsafe (unsafeDupablePerformIO)
 
 data Needs (p :: [Type]) (t :: [Type])
     = Needs
@@ -79,22 +82,21 @@ unsafeCastNeeds (Needs a b c) = Needs a b c
 
 --- Needs Builder
 
-type NeedsBuilder p1 t1 p2 t2 = Needs p1 t1 %1 -> Identity (Needs p2 t2)
+type NeedsBuilder p1 t1 p2 t2 = Needs p1 t1 %1 -> L.IO (Needs p2 t2)
 
 {-# INLINE (>>=) #-}
-(>>=) ::  Identity (Needs p1 t1) %1 -> (Needs p1 t1 %1 -> Identity (Needs p2 t2)) -> Identity (Needs p2 t2)
+(>>=) :: L.IO (Needs p1 t1) %1 -> (Needs p1 t1 %1 -> L.IO (Needs p2 t2)) -> L.IO (Needs p2 t2)
 (>>=) a b = L.do
     !x <- a
     !x1 <- b x
     L.return x1
 
 {-# INLINE (>=>) #-}
-(>=>) :: (L.Monad m) => (a %1 -> m t ) %1 -> (t %1 -> m b) -> a %1 -> m b
+(>=>) :: (a %1 -> L.IO t) %1 -> (t %1 -> L.IO b) -> a %1 -> L.IO b
 (>=>) a b !c = L.do
     !x <- a c
     !x1 <- b x
     L.return x1
-
 
 --- | Shortcut type for 'NeedsBuilder'\'s that simply write a value to a 'Needs' without changing the final packed type
 type NeedsWriter a r t = NeedsBuilder (a ': r) t r t
@@ -102,81 +104,86 @@ type NeedsWriter a r t = NeedsBuilder (a ': r) t r t
 --- | Shortcut type for 'NeedsBuilder'\'s that simply write multiple values to a 'Needs' without changing the final packed type
 type NeedsWriter' a r t = NeedsBuilder (a :++: r) t r t
 
+baseBufferSize :: Int
+baseBufferSize = 1000
 
-{-# NOINLINE runBuilder #-}
-runBuilder :: NeedsBuilder p1 r '[] r -> IO (Packed r)
-runBuilder builder =
-    let !(# _, byteArray #) = runRW# $ newPinnedByteArray# 100#
-        !addr = mutableByteArrayContents# byteArray
-        !srcNeeds = Needs byteArray addr 100
-        !finalNeeds = runIdentity $! builder srcNeeds
-    in finish finalNeeds
+{-# INLINE runBuilder #-}
+runBuilder :: NeedsBuilder p1 r '[] r ->  Packed r
+runBuilder builder = unsafeDupablePerformIO $ do
+    srcNeeds <- IO $ \s -> case newAlignedPinnedByteArray# (unInt baseBufferSize) 0# s of
+        (# s', byteArray #) -> (# s', Needs byteArray (mutableByteArrayContents# byteArray) baseBufferSize #)
+    !finalNeeds <- L.withLinearIO $ L.fmap (toLinear Ur) (builder srcNeeds)
+    finish finalNeeds
 
-{-# NOINLINE finish #-}
-finish :: Needs '[] a ->  IO (Packed a)
-finish (Needs og cursor _) = 
+{-# INLINE finish #-}
+finish :: Needs '[] a -> IO (Packed a)
+finish (Needs og cursor _) = do
     let !contentLen = cursor `minusAddr#` mutableByteArrayContents# og
-        !(# _, resizedBA #) = runRW# $ resizeMutableByteArray# og contentLen
-        -- SRC: https://hackage.haskell.org/package/ghc-internal-9.1201.0/docs/src/GHC.Internal.ForeignPtr.html#mallocPlainForeignPtrBytes
-        !fptr = ForeignPtr (mutableByteArrayContents# resizedBA) (PlainPtr resizedBA)
+    () <- IO $ \s -> case shrinkMutableByteArray# og contentLen s of
+        s' -> (# s', () #)
+    -- SRC: https://hackage.haskell.org/package/ghc-internal-9.1201.0/docs/src/GHC.Internal.ForeignPtr.html#mallocPlainForeignPtrBytes
+    let !fptr = ForeignPtr (mutableByteArrayContents# og) (PlainPtr og)
     -- BS calls this function when alloacting an ForeignPtr, let's do that too
     -- https://hackage-content.haskell.org/package/bytestring-0.12.2.0/docs/src/Data.ByteString.Internal.Type.html#mkDeferredByteString
-    in unsafeToPacked <$> mkDeferredByteString fptr (I# contentLen)
+    !bs <- mkDeferredByteString fptr (I# contentLen)
+    return $! unsafeToPacked bs
 
 {-# INLINE concatNeeds #-}
 concatNeeds :: Needs p t %1 -> NeedsBuilder '[] t1 p (t1 :++: t)
-concatNeeds = toLinear2 (\src dest -> return $ appendNeeds src dest)
+concatNeeds = toLinear2 appendNeeds 
 
 {-# INLINE applyNeeds #-}
 applyNeeds :: Needs '[] t1 %1 -> NeedsBuilder (t1 :++: r) t r t
-applyNeeds = toLinear2 (\src dest -> return $ appendNeeds src dest)
+applyNeeds = toLinear2 appendNeeds 
 
 {-# INLINE writeStorable #-}
 writeStorable :: (Storable a) => a -> NeedsBuilder (a ': r) t r t
-writeStorable a needs =
-    let !sizeOfA = sizeOf a
-        !newNeeds = guardRealloc sizeOfA needs
-        !(# cursor, newNeeds1 #) = getCursor newNeeds
-        %1 !() = toLinear (\cursor' -> unsafeDupablePerformIO (poke (Ptr cursor')  a)) cursor
-     in L.return (unsafeShiftNeedsPtr sizeOfA newNeeds1)
+writeStorable !a !needs = L.do
+    !newNeeds <- guardRealloc (sizeOf a) needs
+    let !(# cursor, newNeeds1 #) = getCursor newNeeds
+    () <- toLinear (\cursor' -> L.fromSystemIO (poke (Ptr cursor') a)) cursor
+    L.return (unsafeShiftNeedsPtr (sizeOf a) newNeeds1)
 
 -- Internal
 
 {-# INLINE guardRealloc #-}
-guardRealloc :: Int -> Needs p1 t1 %1 -> Needs p1 t1
+guardRealloc :: Int -> Needs p1 t1 %1 -> L.IO (Needs p1 t1)
 guardRealloc neededSpace needs =
     if neededSpace L.> spaceLeft
         then reallocNeeds needs1 neededSpace
-        else needs1
+        else L.return needs1
   where
     !(# spaceLeft, needs1 #) = getSpaceLeft needs
 
-{-# NOINLINE reallocNeeds #-}
-reallocNeeds :: Needs p t %1 -> Int -> Needs p t
-reallocNeeds needs additionalNeededSpace =
-    toLinear
-        ( \(Needs origin cursor spaceLeft) ->
-            let 
-                !cursorOffset = I# $ cursor `minusAddr#` mutableByteArrayContents# origin
-                !bufferSize = spaceLeft + cursorOffset
-                !newBufferSize =  (2 * (bufferSize `max` additionalNeededSpace))
-                !(# _, reallocedBA #) = runRW# (resizeMutableByteArray# origin ( unInt newBufferSize))
-             in Needs
-                    reallocedBA
-                    (mutableByteArrayContents# reallocedBA `plusAddr#` unInt cursorOffset)
-                    (newBufferSize - cursorOffset)
-        )
-        needs
+{-# INLINE reallocNeeds #-}
+reallocNeeds :: Needs p t %1 -> Int -> L.IO (Needs p t)
+reallocNeeds = toLinear reallocNeeds'
+
+reallocNeeds' :: Needs p t -> Int -> L.IO (Needs p t)
+reallocNeeds' (Needs origin cursor spaceLeft) additionalNeededSpace =
+    let !cursorOffset = I# $ cursor `minusAddr#` mutableByteArrayContents# origin
+        !oldBufferSize = spaceLeft + cursorOffset
+        !newBufferSize = 2 * (oldBufferSize `max` additionalNeededSpace)
+     in L.fromSystemIO
+            ( IO $ \s -> case resizeMutableByteArray# origin (unInt newBufferSize) s of
+                (# s', reallocedBA #) ->
+                    (#
+                        s'
+                        , Needs
+                            reallocedBA
+                            (mutableByteArrayContents# reallocedBA `plusAddr#` unInt cursorOffset)
+                            (newBufferSize - cursorOffset)
+                    #)
+            )
 
 {-# NOINLINE appendNeeds #-}
-appendNeeds :: Needs a b -> Needs a' b' -> Needs c d
-appendNeeds (Needs srcMa cursor _) dest =
-    let
-        !srcLen = cursor `minusAddr#` mutableByteArrayContents# srcMa
-        !dest1@(Needs ma _ _) = guardRealloc (I# srcLen) dest
-        !_ = runRW# $ copyAddrToAddr# (mutableByteArrayContents# srcMa) (mutableByteArrayContents# ma)  srcLen
-     in
-        unsafeCastNeeds dest1
+appendNeeds :: Needs a b -> NeedsBuilder a' b' c d
+appendNeeds (Needs srcMa cursor _) dest = L.do
+    let !srcLen = cursor `minusAddr#` mutableByteArrayContents# srcMa
+    !reallocedDest <- guardRealloc (I# srcLen) dest
+    let %1 !(# destOg, reallocedDest1 #) = getOrigin reallocedDest
+        %1 !() = toLinear (\destAddr -> case runRW# $ copyAddrToAddr# (mutableByteArrayContents# srcMa) destAddr srcLen of { !_ -> () }) destOg
+    L.return (unsafeCastNeeds reallocedDest1)
 
 -- Utils
 

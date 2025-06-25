@@ -18,5 +18,5 @@ class Packable a where
 instance (Storable a) => Packable a where
     write = writeStorable
 
-pack :: (Packable a) => a -> IO (Packed '[a])
+pack :: (Packable a) => a -> Packed '[a]
 pack = runBuilder . write

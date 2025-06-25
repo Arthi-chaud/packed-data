@@ -17,10 +17,10 @@ import Language.Haskell.TH
 -- For the 'Tree' data type, it generates the following functions
 --
 -- @
--- packLeaf :: ('Packable' a) => a -> IO ('Data.Packed' '[Tree a])
+-- packLeaf :: ('Packable' a) => a -> ('Data.Packed' '[Tree a])
 -- packLeaf n = 'runBuilder' (writeLeaf n)
 --
--- packNode :: ('Packable' a) => Tree a -> Tree a -> IO ('Data.Packed' '[Tree a])
+-- packNode :: ('Packable' a) => Tree a -> Tree a -> ('Data.Packed' '[Tree a])
 -- packNode t1 t2 = 'runBuilder' (writeNode t1 t2)
 -- @
 genConstructorPackers :: [PackingFlag] -> Name -> Q [Dec]
@@ -54,5 +54,5 @@ genConstructorPackerSig _ conName argTypes = do
     (DataConI _ _ tyName) <- reify conName
     (ty, typeParameterNames) <- resolveAppliedType tyName
     constraints <- mapM (\tyVarName -> [t|Packable $(varT tyVarName)|]) typeParameterNames
-    signature <- foldr (\p rest -> [t|$(return p) -> $rest|]) [t|IO (Packed '[$(return ty)])|] argTypes
+    signature <- foldr (\p rest -> [t|$(return p) -> $rest|]) [t|(Packed '[$(return ty)])|] argTypes
     return $ SigD (packConFName conName) $ ForallT [] constraints signature

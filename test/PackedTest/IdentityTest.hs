@@ -22,9 +22,12 @@ specs = describe "Pack / Unpack Identity" $ do
     test "Tree 3" $ Node3 (Node3 Leaf3 Leaf3 (1 :: Int)) (Node3 Leaf3 Leaf3 3) 2
     test "Tree 4" $ Node4 (Node4 (Leaf4 (1 :: Int)) (Leaf4 2)) (Leaf4 3)
   where
-    test name tree = it name $ do
-        !ptree <- pack tree
-        unpack' ptree `shouldBe` tree
+    test name tree =
+        it name $
+            let
+                !ptree = pack tree
+             in
+                unpack' ptree `shouldBe` tree
 
 buildNativeTree :: Int -> Tree1 Int
 buildNativeTree 0 = Leaf1 1

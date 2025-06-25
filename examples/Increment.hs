@@ -14,7 +14,7 @@ import Tree
 $(mkPacked ''Tree [])
 
 incrementRunner :: Packed '[Tree Int] -> IO (Packed '[Tree Int])
-incrementRunner p = runBuilder . fst =<< runReader incrementPacked p
+incrementRunner p = runBuilder . fst <$> runReader incrementPacked p
 
 -- -- The workhouse of the incrementation
 incrementPacked :: PackedReader '[Tree Int] r (NeedsBuilder (Tree Int ': r1) '[Tree Int] r1 '[Tree Int])

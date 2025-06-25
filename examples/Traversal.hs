@@ -11,7 +11,7 @@ $(mkPacked ''Tree [])
 myTree :: Tree Int
 myTree = Node (Leaf 1) (Leaf 2)
 
-packedTree :: IO (Packed '[Tree Int])
+packedTree :: Packed '[Tree Int]
 packedTree = pack myTree
 
 sumPacked :: PackedReader '[Tree Int] r Int
@@ -29,6 +29,4 @@ sumPacked =
         )
 
 runSum :: IO Int
-runSum = do
-    (res, _) <- runReader sumPacked =<< packedTree
-    return res
+runSum = fst <$> runReader sumPacked packedTree

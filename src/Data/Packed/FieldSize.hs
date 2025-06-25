@@ -19,6 +19,8 @@ module Data.Packed.FieldSize (
 import qualified Control.Functor.Linear as L
 import Control.Monad
 import qualified Data.ByteString as BS
+import Data.Packed.Internal
+import Data.Packed.Needs
 import Data.Packed.Packable
 import Data.Packed.Packed
 import Data.Packed.Reader hiding (return)
@@ -26,15 +28,12 @@ import qualified Data.Packed.Reader as R
 import Data.Packed.Skippable (Skippable (..), unsafeSkipN)
 import Data.Packed.Unpackable
 import Foreign.Ptr
-import GHC.Exts
-import Data.Packed.Internal
 import Foreign.Storable
-import Prelude hiding (read)
-import Data.Packed.Needs
-import Data.Functor.Identity
-import Unsafe.Linear
+import GHC.Exts
 import GHC.Int
-import GHC.IO ( unsafeDupablePerformIO)
+import qualified System.IO.Linear as L
+import Unsafe.Linear
+import Prelude hiding (read)
 
 -- | Type representation for the size of a packed data.
 -- The size is in bytes.
@@ -45,7 +44,7 @@ newtype FieldSize = FieldSize Int32 deriving (Num, Enum, Real, Ord, Eq)
 deriving instance Integral FieldSize
 
 instance {-# OVERLAPPING #-} Packable FieldSize where
-    write (FieldSize value) needs =  write value (unsafeCastNeeds needs)
+    write (FieldSize value) needs = write value (unsafeCastNeeds needs)
 
 instance {-# OVERLAPPING #-} Unpackable FieldSize where
     reader = mkPackedReader $ \packed l -> do
@@ -82,38 +81,40 @@ writeWithFieldSize a = withFieldSize (write a)
 
 {-# INLINE withFieldSize #-}
 withFieldSize :: NeedsBuilder (a ': r) t r t -> NeedsBuilder (FieldSize ': a ': r) t r t
-withFieldSize cont needs =
+withFieldSize cont needs = L.do
     let !indirectionSize = sizeOf (0 :: Int32)
-        -- Reallocating the buffer so that the fieldsize can fit
-        !newNeeds = guardRealloc indirectionSize needs
-        -- Get the position of the buffer where the FS will be
-        !(# fieldSizeOffset, newNeeds1 #) = getOffset newNeeds
-        -- Shift the cursor
-        !(Identity writtenNeeds) = cont (unsafeShiftNeedsPtr indirectionSize newNeeds1)
-        -- Get the final position of the cursor
-        !(# finalCursor, writtenNeeds1 #) = getOffset writtenNeeds
+    -- Reallocating the buffer so that the fieldsize can fit
+    !newNeeds <- guardRealloc indirectionSize needs
+    -- Get the position of the buffer where the FS will be
+    let !(# fieldSizeOffset, newNeeds1 #) = getOffset newNeeds
+    -- Shift the cursor
+    !writtenNeeds <- cont (unsafeShiftNeedsPtr indirectionSize newNeeds1)
+    -- Get the final position of the cursor
+    let !(# finalCursor, writtenNeeds1 #) = getOffset writtenNeeds
         !(# og, writtenNeeds2 #) = getOrigin writtenNeeds1
-        %1 !() =
-            toLinear3
-                ( \finalCursor' fsPosition og' fsSize ->
-                    let
-                        -- Count the number of bytes that were written
-                        !writtenBytes = intToInt32# (finalCursor' -# (fsPosition +# unInt fsSize))
-                        -- And write it
-                     in
-                        unsafeDupablePerformIO (poke (Ptr (og' `plusAddr#` fsPosition)) (I32# writtenBytes))
-                )
-                finalCursor
-                fieldSizeOffset
-                og
-                indirectionSize
-     in L.return writtenNeeds2
+    () <-
+        toLinear3
+            ( \finalCursor' fsPosition og' fsSize ->
+                let
+                    -- Count the number of bytes that were written
+                    !writtenBytes = intToInt32# (finalCursor' -# (fsPosition +# unInt fsSize))
+                 in
+                    -- And write it
+
+                    L.fromSystemIO (poke (Ptr $ og' `plusAddr#` fsPosition) (I32# writtenBytes))
+            )
+            finalCursor
+            fieldSizeOffset
+            og
+            indirectionSize
+    L.return writtenNeeds2
 
 {-# INLINE applyNeedsWithFieldSize #-}
 applyNeedsWithFieldSize :: Needs '[] '[a] -> NeedsWriter' (FieldSize ': a ': '[]) r t
 applyNeedsWithFieldSize n = withFieldSize (applyNeeds n)
 
 {-# INLINE readerWithFieldSize #-}
+
 -- | Produces a reader for a value preceded by its 'FieldSize'
 readerWithFieldSize :: (Unpackable a) => PackedReader '[FieldSize, a] r a
 readerWithFieldSize = skip R.>> reader

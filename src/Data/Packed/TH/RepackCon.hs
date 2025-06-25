@@ -16,10 +16,10 @@ import Language.Haskell.TH
 -- For the 'Tree' data type, it generates the following functions
 --
 -- @
--- repackLeaf :: 'Data.Packed.Needs' '[] a -> IO ('Data.Packed.Packed' '[Tree a])
+-- repackLeaf :: 'Data.Packed.Needs' '[] a -> ('Data.Packed.Packed' '[Tree a])
 -- repackLeaf pval = withEmptyNeeds (startLeaf N.>> 'Data.Packed.Needs.concatNeeds' pval)
 --
--- repackNode :: 'Data.Packed.Needs' '[] (Tree a) -> 'Data.Packed.Needs' '[] (Tree a) -> IO ('Data.Packed.Packed  '[Tree a])
+-- repackNode :: 'Data.Packed.Needs' '[] (Tree a) -> 'Data.Packed.Needs' '[] (Tree a) -> ('Data.Packed.Packed  '[Tree a])
 -- repackNode lval rval needs = N.runBuilder (startNode needs N.>>= 'concatNeeds' lval N.>>= 'concatNeeds' rval)
 -- @
 genConstructorRepackers :: [PackingFlag] -> Name -> Q [Dec]
@@ -58,5 +58,5 @@ genConstructorPackerSig :: [PackingFlag] -> Name -> [Type] -> Q Dec
 genConstructorPackerSig _ conName argTypes = do
     (DataConI _ _ tyName) <- reify conName
     (ty, _) <- resolveAppliedType tyName
-    signature <- foldr (\p rest -> [t|Needs '[] '[$(return p)] -> $rest|]) [t|IO (Packed '[$(return ty)])|] argTypes
+    signature <- foldr (\p rest -> [t|Needs '[] '[$(return p)] -> $rest|]) [t|Packed '[$(return ty)]|] argTypes
     return $ SigD (repackConFName conName) $ ForallT [] [] signature

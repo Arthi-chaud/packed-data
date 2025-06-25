@@ -10,7 +10,7 @@ $(mkPacked ''Tree [])
 myTree :: Tree Int
 myTree = Node (Leaf 1) (Leaf 2)
 
-buildTree :: IO (Packed '[Tree Int])
+buildTree :: Packed '[Tree Int]
 buildTree =
     runBuilder $ \needs -> N.do
         node <- startNode needs
