@@ -44,15 +44,15 @@ import qualified Data.Ord.Linear as L
 import Data.Packed.Internal
 import Data.Packed.Packed
 import Data.Packed.Utils ((:++:))
+import Data.Unrestricted.Linear
 import Foreign (Storable (..))
 import GHC.Exts
 import GHC.ForeignPtr
 import GHC.IO (IO (..))
+import GHC.IO.Unsafe (unsafeDupablePerformIO)
 import qualified System.IO.Linear as L
 import Unsafe.Linear
 import Prelude hiding ((>>=))
-import Data.Unrestricted.Linear
-import GHC.IO.Unsafe (unsafeDupablePerformIO)
 
 -- | A buffer where packed values can be written
 -- The order to write these values is defined by the 'l' type list
@@ -124,7 +124,7 @@ baseBufferSize :: Int
 baseBufferSize = 1000
 
 {-# INLINE runBuilder #-}
-runBuilder :: NeedsBuilder p1 r '[] r ->  Packed r
+runBuilder :: NeedsBuilder p1 r '[] r -> Packed r
 runBuilder builder = unsafeDupablePerformIO $ do
     srcNeeds <- IO $ \s -> case newAlignedPinnedByteArray# (unInt baseBufferSize) 0# s of
         (# s', byteArray #) -> (# s', Needs byteArray (mutableByteArrayContents# byteArray) baseBufferSize #)
@@ -146,11 +146,11 @@ finish (Needs og cursor _) = do
 
 {-# INLINE concatNeeds #-}
 concatNeeds :: Needs p t %1 -> NeedsBuilder '[] t1 p (t1 :++: t)
-concatNeeds = toLinear2 appendNeeds 
+concatNeeds = toLinear2 appendNeeds
 
 {-# INLINE applyNeeds #-}
 applyNeeds :: Needs '[] t1 %1 -> NeedsBuilder (t1 :++: r) t r t
-applyNeeds = toLinear2 appendNeeds 
+applyNeeds = toLinear2 appendNeeds
 
 {-# INLINE writeStorable #-}
 writeStorable :: (Storable a) => a -> NeedsBuilder (a ': r) t r t
@@ -198,7 +198,7 @@ appendNeeds (Needs srcMa cursor _) dest = L.do
     let !srcLen = cursor `minusAddr#` mutableByteArrayContents# srcMa
     !reallocedDest <- guardRealloc (I# srcLen) dest
     let %1 !(# destOg, reallocedDest1 #) = getOrigin reallocedDest
-        %1 !() = toLinear (\destAddr -> case runRW# $ copyAddrToAddr# (mutableByteArrayContents# srcMa) destAddr srcLen of { !_ -> () }) destOg
+        %1 !() = toLinear (\destAddr -> case runRW# $ copyAddrToAddr# (mutableByteArrayContents# srcMa) destAddr srcLen of !_ -> ()) destOg
     L.return (unsafeCastNeeds reallocedDest1)
 
 -- Utils

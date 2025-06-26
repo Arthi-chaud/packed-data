@@ -43,8 +43,7 @@ genTransform flags tyName = do
                                     ( $(varE caseName)
                                         R.>>= \resWriter ->
                                             R.return
-                                                ( ($(varE (startFNameForCon curr)) N.>=> resWriter)
-                                                )
+                                                (($(varE (startFNameForCon curr)) N.>=> resWriter))
                                     )
                                 |]
             )
