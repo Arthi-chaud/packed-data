@@ -77,6 +77,6 @@ specs = describe "Pack Trees" $ do
             )
   where
     test name tree bldr =
-        it name $ do
+        it name $
             let ptree = Data.Packed.pack tree
-            fromPacked ptree `shouldBe` builderBytes bldr
+             in fromPacked ptree `shouldBe` builderBytes bldr

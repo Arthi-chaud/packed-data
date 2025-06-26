@@ -12,4 +12,4 @@ packedTree :: Packed '[Tree Int]
 packedTree = pack myTree
 
 unpackedTree :: Tree Int
-unpackedTree = fst $ unpack packedTree
+unpackedTree = fst . unpack $ packedTree

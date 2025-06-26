@@ -29,6 +29,4 @@ sumPacked =
         )
 
 runSum :: IO Int
-runSum = do
-    (res, _) <- runReader sumPacked packedTree
-    return res
+runSum = fst <$> runReader sumPacked packedTree

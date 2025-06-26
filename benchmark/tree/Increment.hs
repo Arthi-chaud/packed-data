@@ -9,7 +9,6 @@ import Control.Monad
 import Criterion.Main
 import Data.List (intercalate)
 import Data.Packed
-import Data.Packed.Needs (applyNeeds)
 import qualified Data.Packed.Needs as N
 import qualified Data.Packed.Reader as R
 import Data.Void
@@ -69,11 +68,9 @@ increment (Node1 t1 t2) = Node1 res1 res2
 
 -- Produces an needsbuilder for a tree alread incremented, and finishes it
 incrementPackedRunner :: Packed '[Tree1 Int] -> IO (Packed '[Tree1 Int])
-incrementPackedRunner packed = do
-    (!needs, _) <- runReader incrementPacked packed
-    return $ finish needs
+incrementPackedRunner packed = runBuilder . fst <$> runReader incrementPacked packed
 
-incrementPacked :: PackedReader '[Tree1 Int] r (Needs '[] '[Tree1 Int])
+incrementPacked :: PackedReader '[Tree1 Int] r (N.NeedsBuilder (Tree1 Int ': r1) '[Tree1 Int] r1 '[Tree1 Int])
 incrementPacked =
     transformTree1
         ( R.do
@@ -83,7 +80,7 @@ incrementPacked =
         ( R.do
             left <- incrementPacked
             right <- incrementPacked
-            R.return (applyNeeds left N.>> applyNeeds right)
+            R.return (left N.>=> right)
         )
 
 buildNativeTree :: Int -> Tree1 Int

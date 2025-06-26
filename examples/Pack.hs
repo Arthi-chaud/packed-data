@@ -10,13 +10,9 @@ $(mkPacked ''Tree [])
 myTree :: Tree Int
 myTree = Node (Leaf 1) (Leaf 2)
 
-packedTree :: Packed '[Tree Int]
-packedTree = pack myTree
-
 buildTree :: Packed '[Tree Int]
 buildTree =
-    finish $
-        withEmptyNeeds $ N.do
-            startNode
-            startLeaf N.>> write (1 :: Int)
-            startLeaf N.>> write 2
+    runBuilder $ \needs -> N.do
+        node <- startNode needs
+        leaf1 <- startLeaf node N.>>= write (1 :: Int)
+        startLeaf leaf1 N.>>= write 2

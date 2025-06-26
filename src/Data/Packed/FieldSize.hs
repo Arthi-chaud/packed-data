@@ -1,6 +1,10 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE LinearTypes #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 module Data.Packed.FieldSize (
     FieldSize (..),
@@ -12,12 +16,11 @@ module Data.Packed.FieldSize (
     applyNeedsWithFieldSize,
 ) where
 
-import ByteString.StrictBuilder (builderLength)
+import qualified Control.Functor.Linear as L
 import Control.Monad
 import qualified Data.ByteString as BS
-import Data.Int (Int32)
+import Data.Packed.Internal
 import Data.Packed.Needs
-import qualified Data.Packed.Needs as N
 import Data.Packed.Packable
 import Data.Packed.Packed
 import Data.Packed.Reader hiding (return)
@@ -26,6 +29,10 @@ import Data.Packed.Skippable (Skippable (..), unsafeSkipN)
 import Data.Packed.Unpackable
 import Foreign.Ptr
 import Foreign.Storable
+import GHC.Exts
+import GHC.Int
+import qualified System.IO.Linear as L
+import Unsafe.Linear
 import Prelude hiding (read)
 
 -- | Type representation for the size of a packed data.
@@ -37,7 +44,7 @@ newtype FieldSize = FieldSize Int32 deriving (Num, Enum, Real, Ord, Eq)
 deriving instance Integral FieldSize
 
 instance {-# OVERLAPPING #-} Packable FieldSize where
-    write (FieldSize value) = mkNeedsBuilder unsafeCastNeeds N.>> write value
+    write (FieldSize value) needs = write value (unsafeCastNeeds needs)
 
 instance {-# OVERLAPPING #-} Unpackable FieldSize where
     reader = mkPackedReader $ \packed l -> do
@@ -70,15 +77,41 @@ skipWithFieldSize = mkPackedReader $ \packed l -> do
 --
 -- Note: Universal quantifier is nedded for GHC < 9.10, because of ScopedTypeVariables
 writeWithFieldSize :: forall a r t. (Packable a) => a -> NeedsWriter' '[FieldSize, a] r t
-writeWithFieldSize a = write (FieldSize size) N.>> applyNeeds aNeeds
-  where
-    size = fromIntegral (builderLength aBuilder)
-    aNeeds :: Needs '[] '[a]
-    aNeeds@(Needs aBuilder) = withEmptyNeeds (write a)
+writeWithFieldSize a = withFieldSize (write a)
+
+{-# INLINE withFieldSize #-}
+withFieldSize :: NeedsBuilder (a ': r) t r t -> NeedsBuilder (FieldSize ': a ': r) t r t
+withFieldSize cont needs = L.do
+    let !indirectionSize = sizeOf (0 :: Int32)
+    -- Reallocating the buffer so that the fieldsize can fit
+    !newNeeds <- guardRealloc indirectionSize needs
+    -- Get the position of the buffer where the FS will be
+    let !(# fieldSizeOffset, newNeeds1 #) = getOffset newNeeds
+    -- Shift the cursor
+    !writtenNeeds <- cont (unsafeShiftNeedsPtr indirectionSize newNeeds1)
+    -- Get the final position of the cursor
+    let !(# finalCursor, writtenNeeds1 #) = getOffset writtenNeeds
+        !(# og, writtenNeeds2 #) = getOrigin writtenNeeds1
+    () <-
+        toLinear3
+            ( \finalCursor' fsPosition og' fsSize ->
+                let
+                    -- Count the number of bytes that were written
+                    !writtenBytes = intToInt32# (finalCursor' -# (fsPosition +# unInt fsSize))
+                 in
+                    -- And write it
+
+                    L.fromSystemIO (poke (Ptr $ og' `plusAddr#` fsPosition) (I32# writtenBytes))
+            )
+            finalCursor
+            fieldSizeOffset
+            og
+            indirectionSize
+    L.return writtenNeeds2
 
 {-# INLINE applyNeedsWithFieldSize #-}
 applyNeedsWithFieldSize :: Needs '[] '[a] -> NeedsWriter' (FieldSize ': a ': '[]) r t
-applyNeedsWithFieldSize n@(Needs builder) = write (FieldSize (fromIntegral (builderLength builder))) N.>> applyNeeds n
+applyNeedsWithFieldSize n = withFieldSize (applyNeeds n)
 
 {-# INLINE readerWithFieldSize #-}
 

@@ -75,8 +75,8 @@ genCase flags tyName = do
                 )
                     <$> zip [0 ..] casePatterns
             fallbackMatch = do
-                fallbackBody <- [|Prelude.fail "Bad Tag"|]
-                return $ Match WildP (NormalB fallbackBody) []
+                fallbackBody <- [|Prelude.fail ("Bad Tag: " ++ show $(varE $ mkName "err"))|]
+                return $ Match (VarP $ mkName "err") (NormalB fallbackBody) []
          in caseE [|$(varE e) :: Tag|] $ matches ++ [fallbackMatch]
 
 -- For a type 'Tree', generates the following signature

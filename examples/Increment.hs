@@ -1,3 +1,7 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+
 -- | Showcase how to 'mutate' packed data
 module Increment (incrementRunner) where
 
@@ -10,12 +14,10 @@ import Tree
 $(mkPacked ''Tree [])
 
 incrementRunner :: Packed '[Tree Int] -> IO (Packed '[Tree Int])
-incrementRunner p = do
-    (incremented, _) <- runReader incrementPacked p
-    return $ finish incremented
+incrementRunner p = runBuilder . fst <$> runReader incrementPacked p
 
--- The workhouse of the incrementation
-incrementPacked :: PackedReader '[Tree Int] r (Needs '[] '[Tree Int])
+-- -- The workhouse of the incrementation
+incrementPacked :: PackedReader '[Tree Int] r (NeedsBuilder (Tree Int ': r1) '[Tree Int] r1 '[Tree Int])
 incrementPacked =
     transformTree
         ( R.do
@@ -25,5 +27,5 @@ incrementPacked =
         ( R.do
             left <- incrementPacked
             right <- incrementPacked
-            R.return (applyNeeds left N.>> applyNeeds right)
+            R.return (\needs -> left needs N.>>= right)
         )
