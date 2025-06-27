@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Data.Packed.Unpackable (
@@ -13,10 +14,10 @@ module Data.Packed.Unpackable (
     readerWithoutShift,
 ) where
 
+import Data.Packed.Internal
 import Data.Packed.Packed
 import Data.Packed.Reader
 import Foreign (Storable (peek, sizeOf), castPtr, plusPtr)
-import GHC.IO (unsafePerformIO)
 
 -- | An 'Unpackable' is a value that can be read (i.e. deserialised) from a 'Data.Packed' value
 class Unpackable a where
@@ -25,20 +26,22 @@ class Unpackable a where
 
 instance (Storable a) => Unpackable a where
     {-# INLINE reader #-}
-    reader = mkPackedReader $ \ptr l -> do
-        !n <- Foreign.peek (castPtr ptr)
-        let !shiftedCount = sizeOf n
+    reader = mkPackedReader $ \ptr l ->
+        let !n = unsafeDupablePerformIO $ Foreign.peek (castPtr ptr)
+            !shiftedCount = sizeOf n
             !l1 = l - shiftedCount
             !ptr1 = ptr `plusPtr` shiftedCount
-        Prelude.return (n, ptr1, l1)
+         in (# n, ptr1, l1 #)
 
 {-# INLINE readerWithoutShift #-}
 
 -- | In a `PackedReader`, reads a value without moving the cursor
 readerWithoutShift :: (Unpackable a) => PackedReader (a ': r) (a ': r) a
-readerWithoutShift = mkPackedReader $ \ptr len -> do
-    (!a, _, _) <- runPackedReader reader ptr len
-    Prelude.return (a, ptr, len)
+readerWithoutShift = mkPackedReader $ \ptr len ->
+    let
+        !(# !a, _, _ #) = runPackedReader reader ptr len
+     in
+        (# a, ptr, len #)
 
 {-# INLINE unpack #-}
 
@@ -46,7 +49,7 @@ readerWithoutShift = mkPackedReader $ \ptr len -> do
 --
 -- Returns the unconsumed 'Data.Packed.Packed' portion
 unpack :: (Unpackable a) => Packed (a ': r) -> (a, Packed r)
-unpack = unsafePerformIO . runReader reader
+unpack = runReader reader
 
 {-# INLINE unpack' #-}
 

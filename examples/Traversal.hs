@@ -28,5 +28,5 @@ sumPacked =
             R.return res
         )
 
-runSum :: IO Int
-runSum = fst <$> runReader sumPacked packedTree
+runSum :: Int
+runSum = fst $ runReader sumPacked packedTree

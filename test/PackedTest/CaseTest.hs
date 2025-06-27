@@ -21,7 +21,7 @@ specs = describe "Case on Trees" $ do
                         rightSum <- computeSum
                         R.return $ leftSum + rightSum
                     )
-        (res, _) <- runReader computeSum tree
+            (res, _) = runReader computeSum tree
         res `shouldBe` 55
   where
     buildTree 0 = Leaf1 0

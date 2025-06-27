@@ -8,7 +8,6 @@
 module Data.Packed.Instances where
 
 import Data.Packed.TH
-import Data.Packed.Unpackable
 import Prelude hiding (readList)
 
 $(mkPacked ''[] [])

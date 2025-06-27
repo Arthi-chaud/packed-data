@@ -1,7 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 -- |
 -- It is recommended to import this module like so:
@@ -19,12 +21,16 @@ module Data.Packed.Reader (
     fail,
     return,
     ReaderPtr,
+    liftIO,
 ) where
 
 import Data.ByteString.Internal
+import Data.Packed.Internal
 import Data.Packed.Packed
 import Data.Packed.Utils ((:++:))
 import Foreign
+import GHC.Exts
+import GHC.IO (unIO)
 import Prelude hiding (fail, return, (>>), (>>=))
 import qualified Prelude
 
@@ -43,7 +49,7 @@ newtype PackedReader p r v = PackedReader
     { runPackedReader ::
         ReaderPtr (p :++: r) ->
         Int ->
-        IO (v, ReaderPtr r, Int)
+        (# v, ReaderPtr r, Int #)
     }
 
 {-# INLINE mkPackedReader #-}
@@ -52,16 +58,16 @@ newtype PackedReader p r v = PackedReader
 mkPackedReader ::
     ( ReaderPtr (p :++: r) ->
       Int ->
-      IO (v, ReaderPtr r, Int)
+      (# v, ReaderPtr r, Int #)
     ) ->
     PackedReader p r v
 mkPackedReader = PackedReader
 
 instance Functor (PackedReader p r) where
     {-# INLINE fmap #-}
-    fmap f (PackedReader reader) = PackedReader $ \ptr l -> do
-        (!n, !rest, !l1) <- reader ptr l
-        Prelude.return (f n, rest, l1)
+    fmap f (PackedReader reader) = PackedReader $ \ptr l ->
+        let !(# !n, !rest, !l1 #) = reader ptr l
+         in (# f n, rest, l1 #)
 
 {-# INLINE (>>=) #-}
 
@@ -72,10 +78,12 @@ instance Functor (PackedReader p r) where
     PackedReader p (r1 :++: r2) v ->
     (v -> PackedReader r1 r2 v') ->
     PackedReader (p :++: r1) r2 v'
-(>>=) m1 m2 = PackedReader $ \packed l -> do
-    (!value, !packed1, !l1) <- runPackedReader m1 packed l
-    (!res, !rest, !l2) <- runPackedReader (m2 value) packed1 l1
-    Prelude.return (res, rest, l2)
+(>>=) m1 m2 = PackedReader $ \packed l ->
+    let
+        !(# !value, !packed1, !l1 #) = runPackedReader m1 packed l
+        !(# !res, !rest, !l2 #) = runPackedReader (m2 value) packed1 l1
+     in
+        (# res, rest, l2 #)
 
 {-# INLINE (>>) #-}
 
@@ -84,20 +92,21 @@ instance Functor (PackedReader p r) where
     PackedReader p (r1 :++: r2) v ->
     PackedReader r1 r2 v' ->
     PackedReader (p :++: r1) r2 v'
-(>>) m1 m2 = PackedReader $ \packed l -> do
-    (!_, !packed1, !l1) <- runPackedReader m1 packed l
-    runPackedReader m2 packed1 l1
+(>>) m1 m2 = PackedReader $ \packed l ->
+    let
+        !(# !_, !packed1, !l1 #) = runPackedReader m1 packed l
+     in
+        runPackedReader m2 packed1 l1
 
 {-# INLINE return #-}
 
 -- | Like 'Prelude.return', wraps a value in a 'PackedReader' that will not consume its input.
 return :: v -> PackedReader '[] r v
-return value = PackedReader $ \(!packed) !l ->
-    Prelude.return (value, packed, l)
+return value = PackedReader $ \(!packed) !l -> (# value, packed, l #)
 
 {-# INLINE fail #-}
 fail :: String -> PackedReader '[] r v
-fail msg = mkPackedReader $ \_ _ -> Prelude.fail msg
+fail msg = mkPackedReader $ \_ _ -> error msg
 
 -- | Allows reading another packed value in a do-notation.
 --
@@ -129,17 +138,27 @@ lift ::
     PackedReader a b v ->
     Packed (a :++: b) ->
     PackedReader '[] r v
-lift r p = mkPackedReader $ \old l -> do
-    (!res, _) <- runReader r p
-    Prelude.return (res, old, l)
+lift r p = mkPackedReader $ \old l ->
+    let
+        !(!res, _) = runReader r p
+     in
+        (# res, old, l #)
+
+{-# INLINE liftIO #-}
+liftIO :: IO a -> PackedReader b c a
+liftIO io = mkPackedReader $ \ptr size -> case runRW# (unIO io) of
+    (# _, !a #) -> (# a, ptr, size #)
 
 -- | Run the reading function using a ByteString.
 {-# INLINE runReader #-}
 runReader ::
     PackedReader p r v ->
     Packed (p :++: r) ->
-    IO (v, Packed r)
-runReader (PackedReader f) (Packed (BS fptr l)) = withForeignPtr fptr $ \ptr -> do
-    (!v, !ptr1, !l1) <- f (castPtr ptr) l
-    !fptr1 <- newForeignPtr_ ptr1
-    Prelude.return (v, Packed (BS fptr1 l1))
+    (v, Packed r)
+runReader (PackedReader f) (Packed (BS fptr l)) =
+    unsafeDupablePerformIO
+        ( withForeignPtr fptr $ \ptr -> do
+            let (# !v, !ptr1, !l1 #) = f (castPtr ptr) l
+            !fptr1 <- newForeignPtr_ ptr1
+            Prelude.return (v, Packed (BS fptr1 l1))
+        )

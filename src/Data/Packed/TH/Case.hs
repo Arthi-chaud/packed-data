@@ -1,10 +1,15 @@
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedTuples #-}
 
 module Data.Packed.TH.Case (caseFName, genCase) where
 
 import Data.Packed.Reader hiding (return)
 import Data.Packed.TH.Flag
 import Data.Packed.TH.Utils (Tag, getBranchesTyList, getNameAndBangTypesFromCon, resolveAppliedType, sanitizeConName)
+import GHC.Exts
+import GHC.Word
 import Language.Haskell.TH
 
 caseFName :: Name -> Name
@@ -35,11 +40,10 @@ genCase ::
     Q [Dec]
 genCase flags tyName = do
     (TyConI (DataD _ _ _ _ cs _)) <- reify tyName
-    packedName <- newName "packed"
     -- For each data constructor, we build names for the pattern for the case functions
     -- Example: leafCase, nodeCase, etc.
     let casePatterns = buildCaseFunctionName <$> cs
-    body <- buildBody casePatterns packedName
+    body <- buildBody casePatterns
     signature <- genCaseSignature flags tyName
     return
         [ signature
@@ -49,16 +53,21 @@ genCase flags tyName = do
         ]
   where
     -- Build the body (the do, binding and case expressions)
-    buildBody casePatterns packedName =
+    buildBody casePatterns =
         let bytes1VarName = mkName "b"
             length1VarName = mkName "l"
             flagVarName = mkName "flag"
          in do
                 caseExpression <- buildCaseExpression flagVarName casePatterns bytes1VarName length1VarName
                 [|
-                    mkPackedReader $ \($(varP packedName)) l' -> do
-                        ($(varP flagVarName), $(varP bytes1VarName), $(varP length1VarName)) <- runPackedReader reader $(varE packedName) l'
-                        $(return caseExpression)
+                    mkPackedReader $ \(Ptr addr) l' ->
+                        let
+                            !(# _, tag #) = runRW# (readWord8OffAddr# addr 0#)
+                            !($(varP flagVarName)) = W8# tag
+                            !($(varP bytes1VarName)) = Ptr (addr `plusAddr#` 1#)
+                            !($(varP length1VarName)) = l' - 1
+                         in
+                            $(return caseExpression)
                     |]
     -- for dataconstructor Leaf, will be 'leafCase'
     buildCaseFunctionName = conNameToCaseFunctionName . fst . getNameAndBangTypesFromCon
@@ -75,7 +84,7 @@ genCase flags tyName = do
                 )
                     <$> zip [0 ..] casePatterns
             fallbackMatch = do
-                fallbackBody <- [|Prelude.fail ("Bad Tag: " ++ show $(varE $ mkName "err"))|]
+                fallbackBody <- [|error ("Bad Tag: " ++ show $(varE $ mkName "err"))|]
                 return $ Match (VarP $ mkName "err") (NormalB fallbackBody) []
          in caseE [|$(varE e) :: Tag|] $ matches ++ [fallbackMatch]
 

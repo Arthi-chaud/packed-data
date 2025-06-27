@@ -36,7 +36,6 @@ module Data.Packed.Needs (
 
 import qualified Control.Functor.Linear as L
 import Data.ByteString.Internal
-import Data.Functor.Identity (Identity (..))
 import Data.Int
 import Data.Kind
 import qualified Data.Num.Linear as L
@@ -49,7 +48,6 @@ import Foreign (Storable (..))
 import GHC.Exts
 import GHC.ForeignPtr
 import GHC.IO (IO (..))
-import GHC.IO.Unsafe (unsafeDupablePerformIO)
 import qualified System.IO.Linear as L
 import Unsafe.Linear
 import Prelude hiding ((>>=))
