@@ -13,6 +13,16 @@ module Data.Packed.Reader (
     PackedReader (..),
     mkPackedReader,
     runReader,
+
+    -- * Applicative
+    pure,
+    liftA,
+    liftA2,
+    (<*>),
+    (*>),
+    (<*),
+
+    -- * Monad
     (>>=),
     (>>),
     lift,
@@ -25,7 +35,7 @@ import Data.ByteString.Internal
 import Data.Packed.Packed
 import Data.Packed.Utils ((:++:))
 import Foreign
-import Prelude hiding (fail, return, (>>), (>>=))
+import Prelude hiding (fail, liftA2, pure, return, (*>), (<*), (<*>), (>>), (>>=))
 import qualified Prelude
 
 type ReaderPtr r = Ptr Word8
@@ -63,11 +73,45 @@ instance Functor (PackedReader p r) where
         (!n, !rest, !l1) <- reader ptr l
         Prelude.return (f n, rest, l1)
 
-{-# INLINE (>>=) #-}
+-------- Applicative
+
+{-# INLINE pure #-}
+pure :: v -> PackedReader '[] r v
+pure = return
+
+{-# INLINE liftA #-}
+liftA :: (a -> b) -> PackedReader p t a -> PackedReader p t b
+liftA = fmap
+
+{-# INLINE liftA2 #-}
+liftA2 ::
+    (v1 -> v2 -> v3) ->
+    PackedReader p (r1 :++: r2) v1 ->
+    PackedReader r1 r2 v2 ->
+    PackedReader (p :++: r1) r2 v3
+liftA2 f m1 m2 = PackedReader $ \packed l -> do
+    (!v1, !packed1, !l1) <- runPackedReader m1 packed l
+    (!v2, !rest, !l2) <- runPackedReader m2 packed1 l1
+    Prelude.return (f v1 v2, rest, l2)
+
+{-# INLINE (<*>) #-}
+(<*>) :: PackedReader p (r1 :++: r2) (v1 -> v2) -> PackedReader r1 r2 v1 -> PackedReader (p :++: r1) r2 v2
+(<*>) = liftA2 id
+
+{-# INLINE (*>) #-}
+(*>) :: PackedReader p (r1 :++: r2) v -> PackedReader r1 r2 v' -> PackedReader (p :++: r1) r2 v'
+(*>) = (>>)
+
+{-# INLINE (<*) #-}
+(<*) :: PackedReader p (r1 :++: r2) v2 -> PackedReader r1 r2 v1 -> PackedReader (p :++: r1) r2 v2
+(<*) = liftA2 const
+
+-------- Monad
 
 -- | Allows bindings 'Data.Packed.Reader.PackedReader' together, in a monad-like manner.
 --
 -- Similar to 'Prelude.>>='
+{-# INLINE (>>=) #-}
 (>>=) ::
     PackedReader p (r1 :++: r2) v ->
     (v -> PackedReader r1 r2 v') ->
