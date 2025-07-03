@@ -1,13 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Data.Packed.Skippable (Skippable (..), unsafeSkipN) where
 
 import Data.Kind
-import Data.Packed.Reader
+import Data.Packed.Reader hiding (return)
 import Foreign (plusPtr)
 import Foreign.Storable
 
@@ -24,4 +23,4 @@ instance (Storable a) => Skippable a where
 
 -- | UNSAFE: Shifts the cursor to n bytes to the right.
 unsafeSkipN :: forall (a :: [Type]) (r :: [Type]). Int -> PackedReader a r ()
-unsafeSkipN n = mkPackedReader $ \ptr l -> (# (), ptr `plusPtr` n, l - n #)
+unsafeSkipN n = mkPackedReader $ \(PF ptr l) -> return ((), PF (ptr `plusPtr` n) (l - n))

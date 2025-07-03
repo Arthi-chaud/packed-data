@@ -17,24 +17,32 @@ module Data.Packed.Reader (
     runReader,
     (>>=),
     (>>),
-    lift,
     fail,
     return,
-    ReaderPtr,
+    lift,
     liftIO,
+
+    -- * Application
+    with,
+    threadedWith,
+
+    -- * Fragments
+    PackedFragment (..),
+    castPackedFragment,
 ) where
 
+import Control.Monad.Identity
+import Data.Bifunctor
 import Data.ByteString.Internal
+import Data.Kind
 import Data.Packed.Internal
 import Data.Packed.Packed
 import Data.Packed.Utils ((:++:))
-import Foreign
+import Foreign hiding (with)
 import GHC.Exts
 import GHC.IO (unIO)
 import Prelude hiding (fail, return, (>>), (>>=))
 import qualified Prelude
-
-type ReaderPtr r = Ptr Word8
 
 -- | Basically a function that reads/desrialises a value from a 'Data.Packed.Packed'
 --
@@ -46,28 +54,32 @@ type ReaderPtr r = Ptr Word8
 --
 -- __Note:__ It is an indexed monad.
 newtype PackedReader p r v = PackedReader
-    { runPackedReader ::
-        ReaderPtr (p :++: r) ->
-        Int ->
-        (# v, ReaderPtr r, Int #)
+    { runReaderStep :: PackedFragment (p :++: r) -> Identity (v, PackedFragment r)
     }
+
+-- | Represents position of the cursor in the packed buffer to traverse
+data PackedFragment (p :: [Type])
+    = PF
+        -- | Pointer in the packed buffer
+        {-# UNPACK #-} !(Ptr Word8)
+        -- | Number of bytes between the cursor's position and the end of the buffer
+        {-# UNPACK #-} !Int
+
+{-# INLINE castPackedFragment #-}
+castPackedFragment :: PackedFragment p -> PackedFragment t
+castPackedFragment (PF p t) = PF p t
 
 {-# INLINE mkPackedReader #-}
 
 -- | Builds a 'PackedReader'
 mkPackedReader ::
-    ( ReaderPtr (p :++: r) ->
-      Int ->
-      (# v, ReaderPtr r, Int #)
-    ) ->
+    (PackedFragment (p :++: r) -> Identity (v, PackedFragment r)) ->
     PackedReader p r v
 mkPackedReader = PackedReader
 
 instance Functor (PackedReader p r) where
     {-# INLINE fmap #-}
-    fmap f (PackedReader reader) = PackedReader $ \ptr l ->
-        let !(# !n, !rest, !l1 #) = reader ptr l
-         in (# f n, rest, l1 #)
+    fmap f (PackedReader reader) = PackedReader $ fmap (first f) . reader
 
 {-# INLINE (>>=) #-}
 
@@ -78,12 +90,10 @@ instance Functor (PackedReader p r) where
     PackedReader p (r1 :++: r2) v ->
     (v -> PackedReader r1 r2 v') ->
     PackedReader (p :++: r1) r2 v'
-(>>=) m1 m2 = PackedReader $ \packed l ->
-    let
-        !(# !value, !packed1, !l1 #) = runPackedReader m1 packed l
-        !(# !res, !rest, !l2 #) = runPackedReader (m2 value) packed1 l1
-     in
-        (# res, rest, l2 #)
+(>>=) pr1 next = PackedReader $ \pf ->
+    let Identity (!v1, !pf1) = runReaderStep pr1 (castPackedFragment pf)
+        PackedReader pr2 = next v1
+     in pr2 pf1
 
 {-# INLINE (>>) #-}
 
@@ -92,62 +102,26 @@ instance Functor (PackedReader p r) where
     PackedReader p (r1 :++: r2) v ->
     PackedReader r1 r2 v' ->
     PackedReader (p :++: r1) r2 v'
-(>>) m1 m2 = PackedReader $ \packed l ->
+(>>) pr1 (PackedReader pr2) = PackedReader $ \pf ->
     let
-        !(# !_, !packed1, !l1 #) = runPackedReader m1 packed l
+        Identity (!_, pf1) = runReaderStep pr1 (castPackedFragment pf)
      in
-        runPackedReader m2 packed1 l1
+        pr2 pf1
 
 {-# INLINE return #-}
 
 -- | Like 'Prelude.return', wraps a value in a 'PackedReader' that will not consume its input.
 return :: v -> PackedReader '[] r v
-return value = PackedReader $ \(!packed) !l -> (# value, packed, l #)
+return !value = PackedReader $ \(!pf) -> Identity (value, pf)
 
 {-# INLINE fail #-}
 fail :: String -> PackedReader '[] r v
-fail msg = mkPackedReader $ \_ _ -> error msg
-
--- | Allows reading another packed value in a do-notation.
---
--- The reading of the second stream does not consume anything from the first.
---
--- __Example__:
---
--- @
--- import qualified Data.Packed.Reader as R
--- data Tree a = Leaf | Node (Tree a) a (Tree a)
---
--- packedTreeToList :: 'PackedReader' '[Tree Int] '[] [Int]
--- packedTreeToList = go []
---     where
---         go l =
---             caseTree
---                 (R.return l)
---                 ( R.do
---                     packedLeft <- 'Data.Packed.isolate'
---                     n <- 'Data.Packed.readerWithFieldSize'
---                     packedRight <- 'Data.Packed.isolate'
---                     -- Using lift allows consuming the packedRight value
---                     rightList <- R.'lift' (go l) packedRight
---                     R.'lift' (go $ n : rightList) packedLeft
---                 )
--- @
-{-# INLINE lift #-}
-lift ::
-    PackedReader a b v ->
-    Packed (a :++: b) ->
-    PackedReader '[] r v
-lift r p = mkPackedReader $ \old l ->
-    let
-        !(!res, _) = runReader r p
-     in
-        (# res, old, l #)
+fail msg = mkPackedReader $ \_ -> error msg
 
 {-# INLINE liftIO #-}
-liftIO :: IO a -> PackedReader b c a
-liftIO io = mkPackedReader $ \ptr size -> case runRW# (unIO io) of
-    (# _, !a #) -> (# a, ptr, size #)
+liftIO :: IO a -> PackedReader '[] c a
+liftIO io = mkPackedReader $ \pf -> case runRW# (unIO io) of
+    (# _, !a #) -> Identity (a, pf)
 
 -- | Run the reading function using a ByteString.
 {-# INLINE runReader #-}
@@ -155,10 +129,29 @@ runReader ::
     PackedReader p r v ->
     Packed (p :++: r) ->
     (v, Packed r)
-runReader (PackedReader f) (Packed (BS fptr l)) =
+runReader pr (Packed (BS fptr l)) =
     unsafeDupablePerformIO
         ( withForeignPtr fptr $ \ptr -> do
-            let (# !v, !ptr1, !l1 #) = f (castPtr ptr) l
+            let Identity (!v, !(PF ptr1 l1)) = runReaderStep pr (PF (castPtr ptr) l)
             !fptr1 <- newForeignPtr_ ptr1
             Prelude.return (v, Packed (BS fptr1 l1))
         )
+
+{-# INLINE lift #-}
+lift ::
+    PackedReader a b v ->
+    PackedFragment (a :++: b) ->
+    PackedReader '[] r v
+lift r p = mkPackedReader $ \pf ->
+    let
+        Identity !(!res, !_) = runReaderStep r p
+     in
+        Identity (res, pf)
+
+{-# INLINE with #-}
+with :: PackedReader p r v -> PackedFragment (p :++: r) -> Identity (v, PackedFragment r)
+with = runReaderStep
+
+{-# INLINE threadedWith #-}
+threadedWith :: PackedFragment (p :++: r) -> PackedReader p r v -> Identity (v, PackedFragment r)
+threadedWith = flip with

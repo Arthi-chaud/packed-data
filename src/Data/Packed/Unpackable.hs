@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples #-}
@@ -14,10 +15,12 @@ module Data.Packed.Unpackable (
     readerWithoutShift,
 ) where
 
-import Data.Packed.Internal
+import Control.Monad.Identity
 import Data.Packed.Packed
-import Data.Packed.Reader
+import Data.Packed.Reader hiding (return)
 import Foreign (Storable (peek, sizeOf), castPtr, plusPtr)
+import GHC.Exts
+import GHC.IO
 
 -- | An 'Unpackable' is a value that can be read (i.e. deserialised) from a 'Data.Packed' value
 class Unpackable a where
@@ -26,22 +29,24 @@ class Unpackable a where
 
 instance (Storable a) => Unpackable a where
     {-# INLINE reader #-}
-    reader = mkPackedReader $ \ptr l ->
-        let !n = unsafeDupablePerformIO $ Foreign.peek (castPtr ptr)
-            !shiftedCount = sizeOf n
-            !l1 = l - shiftedCount
-            !ptr1 = ptr `plusPtr` shiftedCount
-         in (# n, ptr1, l1 #)
+    reader = PackedReader $ \(PF ptr int) -> case runRW# (unIO (peek $ castPtr ptr)) of
+        (# _, !n #) ->
+            let
+                !sizeOfN = sizeOf n
+                !shiftedPtr = ptr `plusPtr` sizeOfN
+                !shiftedSize = int - sizeOfN
+             in
+                return (n, PF shiftedPtr shiftedSize)
 
 {-# INLINE readerWithoutShift #-}
 
 -- | In a `PackedReader`, reads a value without moving the cursor
-readerWithoutShift :: (Unpackable a) => PackedReader (a ': r) (a ': r) a
-readerWithoutShift = mkPackedReader $ \ptr len ->
+readerWithoutShift :: (Unpackable a) => PackedReader '[] (a ': r) a
+readerWithoutShift = mkPackedReader $ \pf ->
     let
-        !(# !a, _, _ #) = runPackedReader reader ptr len
+        Identity !(!a, !_) = runReaderStep reader pf
      in
-        (# a, ptr, len #)
+        return (a, pf)
 
 {-# INLINE unpack #-}
 

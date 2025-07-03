@@ -17,6 +17,7 @@ module Data.Packed.FieldSize (
 ) where
 
 import qualified Control.Functor.Linear as L
+import Control.Monad.Identity (Identity (Identity))
 import qualified Data.ByteString as BS
 import Data.Packed.Internal
 import Data.Packed.Needs
@@ -46,11 +47,11 @@ instance {-# OVERLAPPING #-} Packable FieldSize where
     write (FieldSize value) needs = write value (unsafeCastNeeds needs)
 
 instance {-# OVERLAPPING #-} Unpackable FieldSize where
-    reader = mkPackedReader $ \packed l ->
+    reader = mkPackedReader $ \pf ->
         let
-            !(# fieldSize, rest, l1 #) = runPackedReader reader packed l
+            Identity !(!fieldSize, !pf1) = runReaderStep reader (castPackedFragment pf)
          in
-            (# FieldSize fieldSize, rest, l1 #)
+            return (FieldSize fieldSize, pf1)
 
 instance {-# OVERLAPPING #-} Skippable FieldSize where
     skip = unsafeSkipN (sizeOf (1 :: Int32))
@@ -67,12 +68,12 @@ getFieldSizeFromPacked packed = FieldSize (fromIntegral $ BS.length (fromPacked 
 
 -- | Allows skipping over a field without having to unpack it
 skipWithFieldSize :: PackedReader '[FieldSize, a] r ()
-skipWithFieldSize = mkPackedReader $ \packed l ->
+skipWithFieldSize = mkPackedReader $ \pf ->
     let
-        !(# FieldSize s, packed1, l1 #) = runPackedReader reader packed l
+        Identity !(FieldSize s, PF packed1 l1) = runReaderStep reader pf
         !size64 = fromIntegral s
      in
-        (# (), packed1 `plusPtr` size64, l1 - size64 #)
+        return ((), PF (packed1 `plusPtr` size64) (l1 - size64))
 
 {-# INLINE writeWithFieldSize #-}
 
@@ -125,10 +126,10 @@ readerWithFieldSize = skip R.>> reader
 {-# INLINE isolate #-}
 
 -- | Splits the 'Packed' value, and isolate the first encoded value.
-isolate :: PackedReader '[FieldSize, a] r (Packed '[a])
-isolate = mkPackedReader $ \packed l ->
+isolate :: PackedReader '[FieldSize, a] r (PackedFragment '[a])
+isolate = mkPackedReader $ \pf ->
     let
-        !(# FieldSize s, packed1, l1 #) = runPackedReader reader packed l
+        Identity !(FieldSize s, PF packed1 l1) = runReaderStep reader pf
         !sizeInt = fromIntegral s
      in
-        (# unsafeToPacked' packed1 sizeInt, packed1 `plusPtr` sizeInt, l1 - sizeInt #)
+        return (PF packed1 sizeInt, PF (packed1 `plusPtr` sizeInt) (l1 - sizeInt))

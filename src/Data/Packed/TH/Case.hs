@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE ExtendedLiterals #-}
 {-# LANGUAGE MagicHash #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE UnboxedTuples #-}
@@ -9,11 +10,13 @@ import Data.Packed.Reader hiding (return)
 import Data.Packed.TH.Flag
 import Data.Packed.TH.Utils (Tag, getBranchesTyList, getNameAndBangTypesFromCon, resolveAppliedType, sanitizeConName)
 import GHC.Exts
-import GHC.Word
+import GHC.Word (Word8 (W8#))
 import Language.Haskell.TH
 
 caseFName :: Name -> Name
 caseFName tyName = mkName $ "case" ++ sanitizeConName tyName
+
+-- TODO Use generated patterns
 
 -- | Generates a function to allow pattern matching a packed data type using the data constructors
 --
@@ -26,11 +29,11 @@ caseFName tyName = mkName $ "case" ++ sanitizeConName tyName
 --     ('Data.Packed.PackedReader' '[a] r b) ->
 --     ('Data.Packed.PackedReader' '[Tree a, Tree a] r b) ->
 --     'Data.Packed.PackedReader' '[Tree a] r b
--- caseTree leafCase nodeCase = 'Data.Packed.Reader.mkPackedReader' $ \packed l -> do
---    (tag :: 'Tag', packed1, l1) <- 'Data.Packed.Unpackable.runReader' 'Data.Packed.reader' packed l
+-- caseTree leafCase nodeCase = 'Data.Packed.Reader.mkPackedReader' $ \pf -> do
+--    Identity (tag :: 'Tag', packed1, l1) <- 'Data.Packed.Unpackable.runReaderStep' 'Data.Packed.reader' pf
 --    case tag of
---        0 -> 'Data.Packed.Reader.runReader' leafCase packed1 l1
---        1 -> 'Data.Packed.Reader.runReader' nodeCase packed1 l1
+--        0 -> 'Data.Packed.Reader.runReaderStep' leafCase packed1 l1
+--        1 -> 'Data.Packed.Reader.runReaderStep' nodeCase packed1 l1
 --        _ -> fail "Bad Tag"
 -- @
 genCase ::
@@ -60,10 +63,9 @@ genCase flags tyName = do
          in do
                 caseExpression <- buildCaseExpression flagVarName casePatterns bytes1VarName length1VarName
                 [|
-                    mkPackedReader $ \(Ptr addr) l' ->
+                    mkPackedReader $ \(PF (Ptr addr) l') ->
                         let
-                            !(# _, tag #) = runRW# (readWord8OffAddr# addr 0#)
-                            !($(varP flagVarName)) = W8# tag
+                            !(# _, $(varP flagVarName) #) = runRW# (readWord8OffAddr# addr 0#)
                             !($(varP bytes1VarName)) = Ptr (addr `plusAddr#` 1#)
                             !($(varP length1VarName)) = l' - 1
                          in
@@ -79,14 +81,15 @@ genCase flags tyName = do
         -- For each xxxCase, we build a branch for the case expression
         let matches =
                 ( \(conIndex, caseFuncName) -> do
-                    body <- [|runPackedReader $(varE caseFuncName) $(varE bytesVarName) $(varE lengthVarName)|]
-                    return $ Match (LitP $ IntegerL conIndex) (NormalB body) []
+                    body <- [|runReaderStep $(varE caseFuncName) (PF $(varE bytesVarName) $(varE lengthVarName))|]
+
+                    match [p|($(litP $ IntegerL conIndex))|] (return $ NormalB body) []
                 )
                     <$> zip [0 ..] casePatterns
             fallbackMatch = do
                 fallbackBody <- [|error ("Bad Tag: " ++ show $(varE $ mkName "err"))|]
                 return $ Match (VarP $ mkName "err") (NormalB fallbackBody) []
-         in caseE [|$(varE e) :: Tag|] $ matches ++ [fallbackMatch]
+         in caseE [|W8# $(varE e)|] $ matches ++ [fallbackMatch]
 
 -- For a type 'Tree', generates the following signature
 -- caseTree ::
