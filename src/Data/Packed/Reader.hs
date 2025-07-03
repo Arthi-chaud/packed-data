@@ -92,7 +92,7 @@ instance Functor (PackedReader p r) where
     PackedReader (p :++: r1) r2 v'
 (>>=) pr1 next = PackedReader $ \pf ->
     let Identity (!v1, !pf1) = runReaderStep pr1 (castPackedFragment pf)
-        PackedReader pr2 = next v1
+        PackedReader !pr2 = next v1
      in pr2 pf1
 
 {-# INLINE (>>) #-}
@@ -104,7 +104,7 @@ instance Functor (PackedReader p r) where
     PackedReader (p :++: r1) r2 v'
 (>>) pr1 (PackedReader pr2) = PackedReader $ \pf ->
     let
-        Identity (!_, pf1) = runReaderStep pr1 (castPackedFragment pf)
+        Identity (!_, !pf1) = runReaderStep pr1 (castPackedFragment pf)
      in
         pr2 pf1
 

@@ -5,13 +5,9 @@ module List (benchmark) where
 
 import Control.DeepSeq
 import Criterion.Main
-import qualified Data.ByteString.Internal as BS
 import Data.Packed
-import Data.Packed.Needs (Needs (Needs))
-import qualified Data.Packed.Needs as N
 import qualified Data.Packed.Reader as R
 import Foreign
-import Utils
 import Prelude hiding (sum)
 
 data Tree1 a = Leaf1 | Node1 (Tree1 a) a (Tree1 a)
@@ -23,7 +19,7 @@ instance NFData (Tree1 a) where
 $(mkPacked ''Tree1 [InsertFieldSize])
 
 benchmark :: [Int] -> Benchmark
-benchmark depths =
+benchmark _ =
     bgroup
         "list"
         []

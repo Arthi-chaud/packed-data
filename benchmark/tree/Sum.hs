@@ -1,5 +1,15 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE ExtendedLiterals #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE UnliftedNewtypes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Sum (benchmark) where
 
@@ -8,7 +18,7 @@ import Data.ByteString.Internal
 import Data.Packed
 import qualified Data.Packed.Reader as R
 import Data.Void (Void)
-import Foreign
+import Foreign hiding (with)
 import Foreign.C
 import Foreign.ForeignPtr.Unsafe
 import GHC.IO

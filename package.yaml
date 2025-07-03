@@ -40,6 +40,9 @@ default-extensions:
 - TemplateHaskellQuotes
 - TupleSections
 - QualifiedDo
+- ViewPatterns
+- PatternSynonyms
+- UnboxedTuples
 
 library:
   source-dirs: src
