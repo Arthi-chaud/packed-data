@@ -24,7 +24,7 @@ import GHC.IO
 
 -- | An 'Unpackable' is a value that can be read (i.e. deserialised) from a 'Data.Packed' value
 class Unpackable a where
-    -- | The 'PackedReader' to unpack a value of that type
+    -- | The 'Data.Packed.Reader.PackedReader' to unpack a value of that type
     reader :: PackedReader '[a] r a
 
 instance (Storable a) => Unpackable a where

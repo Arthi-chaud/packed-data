@@ -20,7 +20,7 @@ import Language.Haskell.TH
 -- repackLeaf pval = withEmptyNeeds (startLeaf N.>> 'Data.Packed.Needs.concatNeeds' pval)
 --
 -- repackNode :: 'Data.Packed.Needs' '[] (Tree a) -> 'Data.Packed.Needs' '[] (Tree a) -> ('Data.Packed.Packed  '[Tree a])
--- repackNode lval rval needs = N.runBuilder (startNode needs N.>>= 'concatNeeds' lval N.>>= 'concatNeeds' rval)
+-- repackNode lval rval needs = N.runBuilder (startNode needs N.>>= 'Data.Packed.Needs.concatNeeds' lval N.>>= 'concatNeeds' rval)
 -- @
 genConstructorRepackers :: [PackingFlag] -> Name -> Q [Dec]
 genConstructorRepackers flags tyName = do

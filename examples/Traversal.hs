@@ -15,7 +15,7 @@ myTree = Node (Leaf 1) (Leaf 2)
 packedTree :: Packed '[Tree Int]
 packedTree = pack myTree
 
--- The two following functions do th same thing
+-- The two following functions do the same thing
 
 sumPacked1 :: PackedReader '[Tree Int] r Int
 sumPacked1 =

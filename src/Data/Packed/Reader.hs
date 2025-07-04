@@ -20,7 +20,6 @@ module Data.Packed.Reader (
     fail,
     return,
     lift,
-    liftIO,
 
     -- * Application
     with,
@@ -39,8 +38,6 @@ import Data.Packed.Internal
 import Data.Packed.Packed
 import Data.Packed.Utils ((:++:))
 import Foreign hiding (with)
-import GHC.Exts
-import GHC.IO (unIO)
 import Prelude hiding (fail, return, (>>), (>>=))
 import qualified Prelude
 
@@ -71,7 +68,7 @@ castPackedFragment (PF p t) = PF p t
 
 {-# INLINE mkPackedReader #-}
 
--- | Builds a 'PackedReader'
+-- | Builds a 'Data.Packed.Reader.PackedReader'
 mkPackedReader ::
     (PackedFragment (p :++: r) -> Identity (v, PackedFragment r)) ->
     PackedReader p r v
@@ -110,20 +107,16 @@ instance Functor (PackedReader p r) where
 
 {-# INLINE return #-}
 
--- | Like 'Prelude.return', wraps a value in a 'PackedReader' that will not consume its input.
+-- | Like 'Prelude.return', wraps a value in a 'Data.Packed.Reader.PackedReader' that will not consume its input.
 return :: v -> PackedReader '[] r v
 return !value = PackedReader $ \(!pf) -> Identity (value, pf)
 
+-- | Interrupts a 'Data.Packed.Reader.PackedReader' computation
 {-# INLINE fail #-}
 fail :: String -> PackedReader '[] r v
 fail msg = mkPackedReader $ \_ -> error msg
 
-{-# INLINE liftIO #-}
-liftIO :: IO a -> PackedReader '[] c a
-liftIO io = mkPackedReader $ \pf -> case runRW# (unIO io) of
-    (# _, !a #) -> Identity (a, pf)
-
--- | Run the reading function using a ByteString.
+-- | Run the reading function using a 'Data.Packed.Packed'.
 {-# INLINE runReader #-}
 runReader ::
     PackedReader p r v ->
@@ -137,6 +130,32 @@ runReader pr (Packed (BS fptr l)) =
             Prelude.return (v, Packed (BS fptr1 l1))
         )
 
+-- | Consumes the input 'Data.Packed.Reader.PackedFragment'.
+--
+-- To be used inside a 'Data.Packed.Reader.PackedReader' computation.
+--
+-- Example:
+--
+-- @
+-- sumPacked :: PackedReader '[Tree Int] r Int
+-- sumPacked = PackedReader $ \case
+--     PackedLeaf l -> reader `with` l
+--     PackedNode n -> threadedWith n $ R.do
+--         !left <- sumPacked2
+--         !right <- sumPacked2
+--         let !res = left + right
+--         R.return res
+-- @
+{-# INLINE with #-}
+with :: PackedReader p r v -> PackedFragment (p :++: r) -> Identity (v, PackedFragment r)
+with = runReaderStep
+
+-- | Flipped version of 'with'
+{-# INLINE threadedWith #-}
+threadedWith :: PackedFragment (p :++: r) -> PackedReader p r v -> Identity (v, PackedFragment r)
+threadedWith = flip with
+
+-- | Allows running a 'Data.Packed.Reader.PackedReader' computation inside an other
 {-# INLINE lift #-}
 lift ::
     PackedReader a b v ->
@@ -147,11 +166,3 @@ lift r p = mkPackedReader $ \pf ->
         Identity !(!res, !_) = runReaderStep r p
      in
         Identity (res, pf)
-
-{-# INLINE with #-}
-with :: PackedReader p r v -> PackedFragment (p :++: r) -> Identity (v, PackedFragment r)
-with = runReaderStep
-
-{-# INLINE threadedWith #-}
-threadedWith :: PackedFragment (p :++: r) -> PackedReader p r v -> Identity (v, PackedFragment r)
-threadedWith = flip with

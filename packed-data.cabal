@@ -31,7 +31,6 @@ library
       Data.Packed
       Data.Packed.Reader
       Data.Packed.Needs
-      Data.Packed.Instances
       Data.Packed.TH
       Data.Packed.TH.Utils
       Data.Packed.Skippable
