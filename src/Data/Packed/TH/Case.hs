@@ -45,7 +45,8 @@ genCase flags tyName = do
     body <- [|PackedReader $ $(buildCaseExpression casePatterns)|]
     signature <- genCaseSignature flags tyName
     return
-        [ signature
+        [ PragmaD $ InlineP (caseFName tyName) Inline FunLike AllPhases
+        , signature
         , FunD
             (caseFName tyName)
             [Clause (VarP . snd <$> casePatterns) (NormalB body) []]
