@@ -86,9 +86,7 @@ module Data.Packed (
     isolate,
     fromPacked,
     unsafeToPacked,
-    unsafeToPacked',
     unsafeCastPacked,
-    getPtr,
 
     -- * PackedReader
     PackedReader,
