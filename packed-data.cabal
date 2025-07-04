@@ -5,7 +5,7 @@ cabal-version: 2.2
 -- see: https://github.com/sol/hpack
 
 name:           packed-data
-version:        0.1.0.3
+version:        0.2.0.0
 description:    Build, traverse and deserialise packed data in Haskell
 category:       Data
 homepage:       https://github.com/Arthi-chaud/packed-haskell#readme
@@ -21,6 +21,7 @@ tested-with:
   , GHC ==9.12.1
 extra-source-files:
     README.md
+    Changelog.md
 
 source-repository head
   type: git

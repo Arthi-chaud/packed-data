@@ -1,5 +1,5 @@
 name:                packed-data
-version:             0.1.0.3
+version:             0.2.0.0
 github:              "Arthi-chaud/packed-haskell"
 license:             BSD-3-Clause
 author:              "Arthi-chaud"
@@ -9,6 +9,7 @@ category:            "Data"
 
 extra-source-files:
 - README.md
+- Changelog.md
 
 description:        Build, traverse and deserialise packed data in Haskell 
 
