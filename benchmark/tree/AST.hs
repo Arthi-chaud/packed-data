@@ -54,7 +54,7 @@ eval (Mul a b) = eval a * eval b
 evalPacked :: PackedReader '[AST] r Int32
 evalPacked =
     caseAST
-        reader
+        (reader R.>>= \(!n) -> R.return n)
         (opLambda (+))
         (opLambda (-))
         (opLambda (*))
@@ -64,9 +64,10 @@ evalPacked =
         (Int32 -> Int32 -> Int32) ->
         PackedReader '[AST, AST] r Int32
     opLambda f = R.do
-        left <- evalPacked
-        right <- evalPacked
-        R.return (f left right)
+        !left <- evalPacked
+        !right <- evalPacked
+        let !res = f left right
+        R.return res
 
 evalPackedNonMonadic :: Packed (AST ': r) -> IO Int32
 evalPackedNonMonadic packed = fst <$> go (unsafeForeignPtrToPtr fptr)
