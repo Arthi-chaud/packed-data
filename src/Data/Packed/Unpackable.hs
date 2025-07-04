@@ -1,7 +1,9 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MagicHash #-}
 {-# LANGUAGE QualifiedDo #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Data.Packed.Unpackable (
@@ -13,32 +15,38 @@ module Data.Packed.Unpackable (
     readerWithoutShift,
 ) where
 
+import Control.Monad.Identity
 import Data.Packed.Packed
-import Data.Packed.Reader
+import Data.Packed.Reader hiding (return)
 import Foreign (Storable (peek, sizeOf), castPtr, plusPtr)
-import GHC.IO (unsafePerformIO)
+import GHC.Exts
+import GHC.IO
 
 -- | An 'Unpackable' is a value that can be read (i.e. deserialised) from a 'Data.Packed' value
 class Unpackable a where
-    -- | The 'PackedReader' to unpack a value of that type
+    -- | The 'Data.Packed.Reader.PackedReader' to unpack a value of that type
     reader :: PackedReader '[a] r a
 
 instance (Storable a) => Unpackable a where
     {-# INLINE reader #-}
-    reader = mkPackedReader $ \ptr l -> do
-        !n <- Foreign.peek (castPtr ptr)
-        let !shiftedCount = sizeOf n
-            !l1 = l - shiftedCount
-            !ptr1 = ptr `plusPtr` shiftedCount
-        Prelude.return (n, ptr1, l1)
+    reader = PackedReader $ \(PF ptr int) -> case runRW# (unIO (peek $ castPtr ptr)) of
+        (# _, !n #) ->
+            let
+                !sizeOfN = sizeOf n
+                !shiftedPtr = ptr `plusPtr` sizeOfN
+                !shiftedSize = int - sizeOfN
+             in
+                return (n, PF shiftedPtr shiftedSize)
 
 {-# INLINE readerWithoutShift #-}
 
 -- | In a `PackedReader`, reads a value without moving the cursor
-readerWithoutShift :: (Unpackable a) => PackedReader (a ': r) (a ': r) a
-readerWithoutShift = mkPackedReader $ \ptr len -> do
-    (!a, _, _) <- runPackedReader reader ptr len
-    Prelude.return (a, ptr, len)
+readerWithoutShift :: (Unpackable a) => PackedReader '[] (a ': r) a
+readerWithoutShift = mkPackedReader $ \pf ->
+    let
+        Identity !(!a, !_) = runReaderStep reader pf
+     in
+        return (a, pf)
 
 {-# INLINE unpack #-}
 
@@ -46,7 +54,7 @@ readerWithoutShift = mkPackedReader $ \ptr len -> do
 --
 -- Returns the unconsumed 'Data.Packed.Packed' portion
 unpack :: (Unpackable a) => Packed (a ': r) -> (a, Packed r)
-unpack = unsafePerformIO . runReader reader
+unpack = runReader reader
 
 {-# INLINE unpack' #-}
 

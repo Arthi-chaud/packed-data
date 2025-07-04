@@ -5,7 +5,9 @@ module PackedTest.IdentityTest (specs) where
 import Data.Packed
 import PackedTest.Data
 import Test.Hspec
+import Prelude hiding (readList)
 
+$(mkPacked ''[] [])
 $(mkPacked ''Tree1 [])
 $(mkPacked ''Tree2 [])
 $(mkPacked ''Tree3 [])

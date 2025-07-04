@@ -37,7 +37,7 @@ buildAndEvaluateASTWithDepth n =
         (depthGroupName n)
         [ envWithCleanup (c_build_ast $ fromIntegral n) c_free_ast $ bench cTestName . nfAppIO c_eval
         , bench nativeTestName $ nf eval nativeAST
-        , bench packedTestName $ nfAppIO (runReader evalPacked) packedAST
+        , bench packedTestName $ nf (runReader evalPacked) packedAST
         , bench packedWithUnpackTestName $ whnf (eval . fst . unpack) packedAST
         , bench nonMonadicPackedTestName $ nfAppIO evalPackedNonMonadic packedAST
         ]
@@ -54,7 +54,7 @@ eval (Mul a b) = eval a * eval b
 evalPacked :: PackedReader '[AST] r Int32
 evalPacked =
     caseAST
-        reader
+        (reader R.>>= \(!n) -> R.return n)
         (opLambda (+))
         (opLambda (-))
         (opLambda (*))
@@ -64,9 +64,10 @@ evalPacked =
         (Int32 -> Int32 -> Int32) ->
         PackedReader '[AST, AST] r Int32
     opLambda f = R.do
-        left <- evalPacked
-        right <- evalPacked
-        R.return (f left right)
+        !left <- evalPacked
+        !right <- evalPacked
+        let !res = f left right
+        R.return res
 
 evalPackedNonMonadic :: Packed (AST ': r) -> IO Int32
 evalPackedNonMonadic packed = fst <$> go (unsafeForeignPtrToPtr fptr)

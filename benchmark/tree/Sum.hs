@@ -1,5 +1,15 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CApiFFI #-}
+{-# LANGUAGE ExtendedLiterals #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UnboxedTuples #-}
+{-# LANGUAGE UnliftedNewtypes #-}
+{-# LANGUAGE ViewPatterns #-}
 
 module Sum (benchmark) where
 
@@ -8,7 +18,7 @@ import Data.ByteString.Internal
 import Data.Packed
 import qualified Data.Packed.Reader as R
 import Data.Void (Void)
-import Foreign
+import Foreign hiding (with)
 import Foreign.C
 import Foreign.ForeignPtr.Unsafe
 import GHC.IO
@@ -39,9 +49,9 @@ computeTreeSumWithDepth n =
         (depthGroupName n)
         [ envWithCleanup (c_build_tree (fromIntegral n)) c_free_tree $ bench cTestName . nfAppIO c_sum
         , bench nativeTestName $ nf sum nativeTree
-        , bench packedTestName $ whnfAppIO (R.runReader sumPacked) packedTree
+        , bench packedTestName $ whnf (R.runReader sumPacked) packedTree
         , bench packedWithUnpackTestName $ whnf (sum . fst . unpack) packedTree
-        , bench packedWithFieldSizeTestName $ whnfAppIO (R.runReader sumPacked2) packedTree2
+        , bench packedWithFieldSizeTestName $ whnf (R.runReader sumPacked2) packedTree2
         , bench nonMonadicPackedTestName $ nfAppIO sumPackedNonMonadic packedTree
         , bench nonMonadicPackedWithSizeTestName $ nfAppIO sumPackedNonMonadic2 packedTree2
         ]

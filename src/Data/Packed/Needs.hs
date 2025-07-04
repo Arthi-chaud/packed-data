@@ -7,7 +7,6 @@
 module Data.Packed.Needs (
     -- * Type
     Needs (..),
-    finish,
 
     -- * Builders
     NeedsBuilder,
@@ -36,7 +35,6 @@ module Data.Packed.Needs (
 
 import qualified Control.Functor.Linear as L
 import Data.ByteString.Internal
-import Data.Functor.Identity (Identity (..))
 import Data.Int
 import Data.Kind
 import qualified Data.Num.Linear as L
@@ -49,7 +47,6 @@ import Foreign (Storable (..))
 import GHC.Exts
 import GHC.ForeignPtr
 import GHC.IO (IO (..))
-import GHC.IO.Unsafe (unsafeDupablePerformIO)
 import qualified System.IO.Linear as L
 import Unsafe.Linear
 import Prelude hiding ((>>=))
@@ -58,7 +55,7 @@ import Prelude hiding ((>>=))
 -- The order to write these values is defined by the 'l' type list
 --
 -- If 'p' is an empty list, then a value of type 't' can be extracted from that buffer.
--- (See 'finish')
+-- (See the signature of 'runReader')
 data Needs (p :: [Type]) (t :: [Type])
     = Needs
         {-# UNPACK #-} !(MutableByteArray# RealWorld)
@@ -81,6 +78,7 @@ getOrigin = toLinear (\n@(Needs origin _ _) -> (# mutableByteArrayContents# orig
 getSpaceLeft :: Needs a b %1 -> (# Int, Needs a b #)
 getSpaceLeft = toLinear (\n@(Needs _ _ spaceLeft) -> (# spaceLeft, n #))
 
+-- | Casts a 'Data.Packed.Needs'
 {-# INLINE unsafeCastNeeds #-}
 unsafeCastNeeds :: Needs a b %1 -> Needs c d
 unsafeCastNeeds (Needs a b c) = Needs a b c
@@ -100,6 +98,7 @@ unsafeCastNeeds (Needs a b c) = Needs a b c
 -- __Note:__ It is an indexed monad.
 type NeedsBuilder p1 t1 p2 t2 = Needs p1 t1 %1 -> L.IO (Needs p2 t2)
 
+-- | Similar to 'Prelude.>>='
 {-# INLINE (>>=) #-}
 (>>=) :: L.IO (Needs p1 t1) %1 -> (Needs p1 t1 %1 -> L.IO (Needs p2 t2)) -> L.IO (Needs p2 t2)
 (>>=) a b = L.do
@@ -107,6 +106,7 @@ type NeedsBuilder p1 t1 p2 t2 = Needs p1 t1 %1 -> L.IO (Needs p2 t2)
     !x1 <- b x
     L.return x1
 
+-- | Similar to 'Control.Monad.>=>'
 {-# INLINE (>=>) #-}
 (>=>) :: (a %1 -> L.IO t) %1 -> (t %1 -> L.IO b) -> a %1 -> L.IO b
 (>=>) a b !c = L.do
@@ -123,6 +123,7 @@ type NeedsWriter' a r t = NeedsBuilder (a :++: r) t r t
 baseBufferSize :: Int
 baseBufferSize = 1000
 
+-- | Runs a 'Data.Packed.Needs.NeedsBuilder' computation. Produces a 'Data.Packed.Packed'
 {-# INLINE runBuilder #-}
 runBuilder :: NeedsBuilder p1 r '[] r -> Packed r
 runBuilder builder = unsafeDupablePerformIO $ do
@@ -144,14 +145,17 @@ finish (Needs og cursor _) = do
     !bs <- mkDeferredByteString fptr (I# contentLen)
     return $! unsafeToPacked bs
 
+-- | Appends a 'Data.Needs.Needs'
 {-# INLINE concatNeeds #-}
 concatNeeds :: Needs p t %1 -> NeedsBuilder '[] t1 p (t1 :++: t)
 concatNeeds = toLinear2 appendNeeds
 
+-- | Uses a 'Data.Packed.Needs.Needs' to fill in the required values for the other 'Data.Packed.Needs.Needs'
 {-# INLINE applyNeeds #-}
 applyNeeds :: Needs '[] t1 %1 -> NeedsBuilder (t1 :++: r) t r t
 applyNeeds = toLinear2 appendNeeds
 
+-- | Writes a 'Storable'
 {-# INLINE writeStorable #-}
 writeStorable :: (Storable a) => a -> NeedsBuilder (a ': r) t r t
 writeStorable !a !needs = L.do

@@ -40,6 +40,9 @@ default-extensions:
 - TemplateHaskellQuotes
 - TupleSections
 - QualifiedDo
+- ViewPatterns
+- PatternSynonyms
+- UnboxedTuples
 
 library:
   source-dirs: src
@@ -54,7 +57,6 @@ library:
   - Data.Packed
   - Data.Packed.Reader
   - Data.Packed.Needs
-  - Data.Packed.Instances
   - Data.Packed.TH
   - Data.Packed.TH.Utils
   - Data.Packed.Skippable
@@ -69,6 +71,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wno-unused-top-binds
+    - -Wno-orphans
     dependencies:
     - packed-data
 

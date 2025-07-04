@@ -43,11 +43,11 @@ compareGettingRightMostNode n =
         (depthGroupName n)
         [ envWithCleanup (c_build_tree (fromIntegral n)) c_free_tree $ bench cTestName . nfAppIO c_get_right_most
         , bench nativeTestName $ nf getRightMostNodeNative nativeTree
-        , bench packedTestName $ nfAppIO (runReader getRightMostNodePacked) packedTree
+        , bench packedTestName $ nf (runReader getRightMostNodePacked) packedTree
         , bench packedWithUnpackTestName $ whnf (getRightMostNodeNative . fst . unpack) packedTree
         , bench nonMonadicPackedTestName $ nfAppIO getRightMostNodePackedNonMonadic packedTree
         , bench packedWithFieldSizeTestName $
-            nfAppIO (runReader getRightMostNodePacked2) packedTreeWithSize
+            nf (runReader getRightMostNodePacked2) packedTreeWithSize
         , bench nonMonadicPackedWithSizeTestName $ nfAppIO getRightMostNodePacked2NonMonadic packedTreeWithSize
         ]
   where
@@ -128,10 +128,10 @@ compareContainsValue n =
     bgroup
         (depthGroupName n)
         [ bench nativeTestName $ nf (containsNative value) nativeTree
-        , bench packedTestName $ nfAppIO (runReader (containsPacked value)) packedTree
+        , bench packedTestName $ nf (runReader (containsPacked value)) packedTree
         , bench nonMonadicPackedTestName $ nfAppIO (containsNonMonadic value) packedTree
         , bench packedWithFieldSizeTestName $
-            nfAppIO (runReader (containsPacked2 value)) packedTreeWithSize
+            nf (runReader (containsPacked2 value)) packedTreeWithSize
         , bench nonMonadicPackedWithSizeTestName $ nfAppIO (containsNonMonadic2 value) packedTreeWithSize
         ]
   where

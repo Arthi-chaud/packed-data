@@ -1,5 +1,7 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE LinearTypes #-}
 {-# LANGUAGE MagicHash #-}
+{-# LANGUAGE UnboxedTuples #-}
 {-# OPTIONS_GHC -Wno-missing-export-lists #-}
 
 module Data.Packed.Internal where
@@ -14,3 +16,7 @@ unPtr (Ptr a) = a
 {-# INLINE unInt #-}
 unInt :: Int %1 -> Int#
 unInt (I# i) = i
+
+{-# INLINE unsafeDupablePerformIO #-}
+unsafeDupablePerformIO :: IO a -> a
+unsafeDupablePerformIO (IO m) = case runRW# m of (# _, !a #) -> a

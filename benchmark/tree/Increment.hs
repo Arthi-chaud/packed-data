@@ -49,11 +49,11 @@ computeTreeSumWithDepth n =
         , bench nativeTestName $
             nf increment nativeTree
         , bench (intercalate "-" [packedTestName, "needsbuilder"]) $
-            nfAppIO incrementPackedRunner packedTree
+            nf incrementPackedRunner packedTree
         , bench (intercalate "-" ["unpack", "repack"]) $
             nf (pack . increment . fst . unpack) packedTree
         , bench (intercalate "-" [packedTestName, "rebuild-repack"]) $
-            nfAppIO repackingIncrementPackedRunner packedTree
+            nf repackingIncrementPackedRunner packedTree
         ]
   where
     !packedTree = pack nativeTree
@@ -67,8 +67,8 @@ increment (Node1 t1 t2) = Node1 res1 res2
     !res2 = increment t2
 
 -- Produces an needsbuilder for a tree alread incremented, and finishes it
-incrementPackedRunner :: Packed '[Tree1 Int] -> IO (Packed '[Tree1 Int])
-incrementPackedRunner packed = runBuilder . fst <$> runReader incrementPacked packed
+incrementPackedRunner :: Packed '[Tree1 Int] -> Packed '[Tree1 Int]
+incrementPackedRunner packed = runBuilder . fst $ runReader incrementPacked packed
 
 incrementPacked :: PackedReader '[Tree1 Int] r (N.NeedsBuilder (Tree1 Int ': r1) '[Tree1 Int] r1 '[Tree1 Int])
 incrementPacked =
@@ -90,11 +90,13 @@ buildNativeTree n = Node1 subTree subTree
     !subTree = buildNativeTree (n - 1)
 
 -- Produces an unpacked tree alread incremented, and packs it
-repackingIncrementPackedRunner :: Packed '[Tree1 Int] -> IO (Packed '[Tree1 Int])
-repackingIncrementPackedRunner packed = do
-    (!tree, _) <- runReader repackingIncrementPacked packed
-    let !repacked = pack tree
-    return repacked
+repackingIncrementPackedRunner :: Packed '[Tree1 Int] -> Packed '[Tree1 Int]
+repackingIncrementPackedRunner packed =
+    let
+        (!tree, _) = runReader repackingIncrementPacked packed
+        !repacked = pack tree
+     in
+        repacked
 
 repackingIncrementPacked :: PackedReader '[Tree1 Int] r (Tree1 Int)
 repackingIncrementPacked =
