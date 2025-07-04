@@ -71,6 +71,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     - -Wno-unused-top-binds
+    - -Wno-orphans
     dependencies:
     - packed-data
 

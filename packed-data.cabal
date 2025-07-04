@@ -55,7 +55,6 @@ library
       Data.Packed.TH.WriteCon
       Data.Packed.Unpackable
       Data.Packed.Utils
-      Tree
       Paths_packed_data
   autogen-modules:
       Paths_packed_data
@@ -111,7 +110,7 @@ executable examples
       ViewPatterns
       PatternSynonyms
       UnboxedTuples
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N -Wno-unused-top-binds
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N -Wno-unused-top-binds -Wno-orphans
   build-depends:
       base >=4.7 && <5
     , packed-data
