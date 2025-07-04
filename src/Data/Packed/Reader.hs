@@ -15,6 +15,16 @@ module Data.Packed.Reader (
     PackedReader (..),
     mkPackedReader,
     runReader,
+
+    -- * Applicative
+    pure,
+    liftA,
+    liftA2,
+    (<*>),
+    (*>),
+    (<*),
+
+    -- * Monad
     (>>=),
     (>>),
     fail,
@@ -38,7 +48,7 @@ import Data.Packed.Internal
 import Data.Packed.Packed
 import Data.Packed.Utils ((:++:))
 import Foreign hiding (with)
-import Prelude hiding (fail, return, (>>), (>>=))
+import Prelude hiding (fail, liftA2, pure, return, (*>), (<*), (<*>), (>>), (>>=))
 import qualified Prelude
 
 -- | Basically a function that reads/desrialises a value from a 'Data.Packed.Packed'
@@ -78,11 +88,51 @@ instance Functor (PackedReader p r) where
     {-# INLINE fmap #-}
     fmap f (PackedReader reader) = PackedReader $ fmap (first f) . reader
 
-{-# INLINE (>>=) #-}
+-------- Applicative
+
+-- | Similar to 'Control.Applicative.pure'
+{-# INLINE pure #-}
+pure :: v -> PackedReader '[] r v
+pure = return
+
+-- | Similar to 'Control.Applicative.liftA'
+{-# INLINE liftA #-}
+liftA :: (a -> b) -> PackedReader p t a -> PackedReader p t b
+liftA = fmap
+
+-- | Similar to 'Control.Applicative.liftA2'
+{-# INLINE liftA2 #-}
+liftA2 ::
+    (v1 -> v2 -> v3) ->
+    PackedReader p (r1 :++: r2) v1 ->
+    PackedReader r1 r2 v2 ->
+    PackedReader (p :++: r1) r2 v3
+liftA2 f m1 m2 = PackedReader $ \pf -> do
+    (!v1, !pf1) <- runReaderStep m1 (castPackedFragment pf)
+    (!v2, !pf2) <- runReaderStep m2 pf1
+    Prelude.return (f v1 v2, pf2)
+
+-- | Similar to 'Control.Applicative.<*>'
+{-# INLINE (<*>) #-}
+(<*>) :: PackedReader p (r1 :++: r2) (v1 -> v2) -> PackedReader r1 r2 v1 -> PackedReader (p :++: r1) r2 v2
+(<*>) = liftA2 id
+
+-- | Similar to 'Control.Applicative.*>'
+{-# INLINE (*>) #-}
+(*>) :: PackedReader p (r1 :++: r2) v -> PackedReader r1 r2 v' -> PackedReader (p :++: r1) r2 v'
+(*>) = (>>)
+
+-- | Similar to 'Control.Applicative.<*'
+{-# INLINE (<*) #-}
+(<*) :: PackedReader p (r1 :++: r2) v2 -> PackedReader r1 r2 v1 -> PackedReader (p :++: r1) r2 v2
+(<*) = liftA2 const
+
+-------- Monad
 
 -- | Allows bindings 'Data.Packed.Reader.PackedReader' together, in a monad-like manner.
 --
 -- Similar to 'Prelude.>>='
+{-# INLINE (>>=) #-}
 (>>=) ::
     PackedReader p (r1 :++: r2) v ->
     (v -> PackedReader r1 r2 v') ->
